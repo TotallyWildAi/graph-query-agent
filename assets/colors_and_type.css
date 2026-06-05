@@ -1,0 +1,438 @@
+/* =====================================================================
+   Totally Wild AI — Design System
+   Foundations: color, type, spacing, radii, shadow, motion
+   ---------------------------------------------------------------------
+   Import once at the top of any page:
+     <link rel="stylesheet" href="/colors_and_type.css">
+   Fonts are loaded from Google Fonts. If you self-host, replace the
+   @import block.
+   ===================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+/* ---------- 1. Color tokens -------------------------------------- */
+:root {
+  /* Paper / surfaces */
+  --paper:        #F4F1E8;   /* primary background, warm cream */
+  --paper-warm:   #EEEAE0;   /* secondary surface (toolbars, table headers) */
+  --card:         #FFFCF4;   /* card / popover fill, slightly brighter */
+  --card-sunk:    #F0EDE3;   /* sunken card / hover well */
+
+  /* Ink (text + structure) */
+  --ink:          #1B1E2C;   /* primary text, borders, the "pen" */
+  --ink-soft:     #454858;   /* secondary text */
+  --ink-faint:    #8A8B95;   /* metadata, disabled */
+  --ink-line:     rgba(27,30,44,0.15); /* hairline rules over paper */
+
+  /* Marker (annotation / destructive) */
+  --marker:       #D8553A;   /* annotation red — errors, mark-up, must-fix */
+  --marker-soft:  #F2D6CD;
+
+  /* Agent / accent palette — each tied to a meaningful role */
+  --accent-cyan:        #3E9DD6;  /* BA agent · info · links */
+  --accent-cyan-soft:   #BFE1F2;
+  --accent-violet:      #7B6BE0;  /* Architect · plan/structure */
+  --accent-violet-soft: #D6D0F4;
+  --accent-green:       #4B9E7E;  /* SE · success · positive metrics */
+  --accent-green-soft:  #C7E3D5;
+  --accent-pink:        #D86A8C;  /* Reviewer · critique */
+  --accent-pink-soft:   #F0CDD9;
+  --accent-yellow:      #E4B852;  /* Researcher · warnings */
+  --accent-yellow-soft: #F4E3B6;
+  --accent-doc:         #8A8B95;  /* Documenter · neutral ink-grey */
+  --accent-doc-soft:    #E8E4D8;
+
+  /* Semantic colors (for app surfaces) */
+  --semantic-info:    var(--accent-cyan);
+  --semantic-success: var(--accent-green);
+  --semantic-warn:    var(--accent-yellow);
+  --semantic-danger:  var(--marker);
+  --link:             var(--accent-cyan);
+  --link-hover:       #2A82B8;
+  --focus-ring:       rgba(62,157,214,0.45);
+
+  /* ---------- 2. Type scale -------------------------------------- */
+  --font-display:  'Caveat', 'Apple Chancery', cursive;
+  --font-body:     'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-mono:     'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* Body scale (Inter, 16px base) */
+  --fs-xs:   11px;
+  --fs-sm:   12.5px;
+  --fs-md:   14px;
+  --fs-lg:   16px;
+  --fs-xl:   18px;
+  --fs-2xl:  22px;
+
+  /* Display scale (Caveat — handwritten) */
+  --fs-display-sm:  28px;
+  --fs-display-md:  36px;
+  --fs-display-lg:  48px;
+  --fs-display-xl:  64px;
+  --fs-display-2xl: 84px;
+
+  /* Mono scale (JetBrains Mono — chrome/labels) */
+  --fs-mono-xs: 10px;
+  --fs-mono-sm: 11px;
+  --fs-mono-md: 12.5px;
+
+  --lh-tight:  1.1;
+  --lh-snug:   1.25;
+  --lh-normal: 1.5;
+  --lh-loose:  1.7;
+
+  --tracking-eyebrow: 0.14em;
+  --tracking-tight:   -0.01em;
+
+  /* ---------- 3. Spacing (8px grid) ------------------------------ */
+  --space-0:  0;
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-7:  32px;
+  --space-8:  40px;
+  --space-9:  48px;
+  --space-10: 64px;
+  --space-11: 80px;
+  --space-12: 96px;
+
+  --container-max: 1480px;
+  --gutter:        28px;
+
+  /* ---------- 4. Radii — the "wobble" system --------------------- */
+  /* Default mode: intentionally asymmetric to imply hand-drawn. */
+  --radius-sm:  6px 8px 5px 7px;
+  --radius-md:  8px 10px 7px 9px;
+  --radius-lg:  10px 12px 9px 11px;
+  --radius-xl:  14px 16px 13px 15px;
+  --radius-pill: 14px 16px 13px 15px;
+  --radius-circle: 50%;
+
+  /* Clean mode toggle — switch by adding class="clean" on root */
+  --radius-clean-sm: 6px;
+  --radius-clean-md: 8px;
+  --radius-clean-lg: 10px;
+
+  /* ---------- 5. Borders ----------------------------------------- */
+  --border-w:        1.5px;
+  --border-w-thin:   1.2px;
+  --border:          var(--border-w) solid var(--ink);
+  --border-thin:     var(--border-w-thin) solid var(--ink);
+  --border-dashed:   var(--border-w-thin) dashed var(--ink);
+  --border-marker:   var(--border-w-thin) dashed var(--marker);
+
+  /* ---------- 6. Shadow system — paper on paper ------------------ */
+  --shadow-rest:   0 1px 0 rgba(27,30,44,0.06), 2px 3px 0 rgba(27,30,44,0.07);
+  --shadow-hover:  0 1px 0 rgba(27,30,44,0.08), 3px 5px 0 rgba(27,30,44,0.10);
+  --shadow-press:  0 1px 0 rgba(27,30,44,0.04), 1px 2px 0 rgba(27,30,44,0.05);
+  --shadow-lift:   0 2px 0 rgba(27,30,44,0.06), 4px 7px 0 rgba(27,30,44,0.10);
+  /* deliberately NO blur shadows. */
+
+  /* ---------- 7. Motion ------------------------------------------ */
+  --ease:        cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-in:     cubic-bezier(0.4, 0, 1, 1);
+  --dur-fast:    180ms;
+  --dur-mid:     240ms;
+  --dur-slow:    320ms;
+
+  /* ---------- 8. Z scale ----------------------------------------- */
+  --z-base:   1;
+  --z-sticky: 50;
+  --z-popover:100;
+  --z-modal:  200;
+  --z-toast:  300;
+}
+
+/* "Clean" mode — flips the wobble off for dense in-product UI. */
+.clean,
+.clean * {
+  --radius-sm: var(--radius-clean-sm);
+  --radius-md: var(--radius-clean-md);
+  --radius-lg: var(--radius-clean-lg);
+  --radius-xl: var(--radius-clean-lg);
+}
+
+/* ---------- 9. Base reset + paper texture ------------------------ */
+html, body { margin: 0; padding: 0; }
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  background: var(--paper);
+  background-image:
+    radial-gradient(circle at 20% 10%, rgba(27,30,44,0.025) 0, transparent 50%),
+    radial-gradient(circle at 80% 90%, rgba(27,30,44,0.030) 0, transparent 60%),
+    repeating-linear-gradient(0deg, transparent 0 2px, rgba(27,30,44,0.012) 2px 3px);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: var(--fs-md);
+  line-height: var(--lh-normal);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* ---------- 10. Semantic type rules ------------------------------ */
+/* Headlines use the display (Caveat) font; eyebrows use mono;
+   body uses Inter. */
+
+h1, .h1 {
+  font-family: var(--font-display);
+  font-size: var(--fs-display-xl);
+  line-height: var(--lh-tight);
+  font-weight: 600;
+  margin: 0 0 var(--space-4);
+  letter-spacing: 0;
+}
+h2, .h2 {
+  font-family: var(--font-display);
+  font-size: var(--fs-display-lg);
+  line-height: var(--lh-tight);
+  font-weight: 600;
+  margin: 0 0 var(--space-3);
+}
+h3, .h3 {
+  font-family: var(--font-display);
+  font-size: var(--fs-display-md);
+  line-height: var(--lh-snug);
+  font-weight: 600;
+  margin: 0 0 var(--space-3);
+}
+h4, .h4 {
+  font-family: var(--font-body);
+  font-size: var(--fs-xl);
+  line-height: var(--lh-snug);
+  font-weight: 600;
+  letter-spacing: var(--tracking-tight);
+  margin: 0 0 var(--space-2);
+}
+h5, .h5 {
+  font-family: var(--font-body);
+  font-size: var(--fs-lg);
+  line-height: var(--lh-snug);
+  font-weight: 600;
+  margin: 0 0 var(--space-2);
+}
+
+p { margin: 0 0 var(--space-3); text-wrap: pretty; }
+
+/* Eyebrow — small mono label used above section titles, in chrome */
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--fs-mono-sm);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+/* Hand class — explicit handwritten display use anywhere */
+.hand {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+/* Mono utility */
+.mono {
+  font-family: var(--font-mono);
+  font-size: var(--fs-mono-md);
+  letter-spacing: 0;
+}
+
+code, pre, kbd, samp {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+}
+
+a {
+  color: var(--link);
+  text-decoration: none;
+  background-image: linear-gradient(currentColor, currentColor);
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 100% 1px;
+  transition: color var(--dur-fast) var(--ease);
+}
+a:hover { color: var(--link-hover); }
+
+hr {
+  border: 0;
+  border-top: var(--border);
+  margin: var(--space-7) 0;
+}
+
+::selection { background: var(--accent-yellow-soft); color: var(--ink); }
+
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ---------- 11. Reusable primitives ----------------------------- */
+
+/* Card — the default container; warm fill, ink border, wobbly radius. */
+.tw-card {
+  background: var(--card);
+  border: var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-rest);
+  padding: var(--space-5);
+}
+
+/* Pill — small mono tag with wobble; comes in agent-color variants. */
+.tw-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border: var(--border-thin);
+  border-radius: var(--radius-pill);
+  background: var(--card);
+  font-family: var(--font-mono);
+  font-size: var(--fs-mono-sm);
+  color: var(--ink);
+  transform: rotate(-0.4deg);
+}
+.tw-pill.cyan    { background: var(--accent-cyan-soft); }
+.tw-pill.violet  { background: var(--accent-violet-soft); }
+.tw-pill.green   { background: var(--accent-green-soft); }
+.tw-pill.pink    { background: var(--accent-pink-soft); }
+.tw-pill.yellow  { background: var(--accent-yellow-soft); }
+.tw-pill.ghost   { background: transparent; color: var(--ink-soft); border-style: dashed; }
+.tw-pill.dark    { background: var(--ink); color: var(--card); border-color: var(--ink); }
+
+/* Chip — square version of pill, used for filter chips, tags */
+.tw-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border: var(--border-thin);
+  border-radius: var(--radius-md);
+  background: var(--card);
+  font-family: var(--font-body);
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  color: var(--ink);
+}
+
+/* Button — primary, ghost, link variants */
+.tw-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px;
+  border: var(--border);
+  border-radius: var(--radius-md);
+  background: var(--card);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: var(--fs-md);
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: var(--shadow-rest);
+  transition:
+    background var(--dur-fast) var(--ease),
+    box-shadow var(--dur-fast) var(--ease),
+    transform var(--dur-fast) var(--ease);
+}
+.tw-btn:hover  { background: var(--card-sunk); box-shadow: var(--shadow-hover); }
+.tw-btn:active { background: var(--paper-warm); box-shadow: var(--shadow-press); }
+
+.tw-btn.primary {
+  background: var(--ink);
+  color: var(--card);
+  border-color: var(--ink);
+}
+.tw-btn.primary:hover  { background: #0E1019; }
+.tw-btn.primary:active { background: #000004; }
+
+.tw-btn.ghost {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+.tw-btn.ghost:hover { background: rgba(27,30,44,0.05); }
+
+.tw-btn.marker {
+  background: var(--marker);
+  color: var(--card);
+  border-color: var(--marker);
+}
+
+/* Image placeholder — dashed border + crossed diagonals */
+.tw-ph {
+  border: 1.2px dashed var(--ink);
+  border-radius: var(--radius-md);
+  background:
+    linear-gradient(45deg, transparent calc(50% - .6px), rgba(27,30,44,0.35) calc(50% - .6px) calc(50% + .6px), transparent calc(50% + .6px)),
+    linear-gradient(-45deg, transparent calc(50% - .6px), rgba(27,30,44,0.35) calc(50% - .6px) calc(50% + .6px), transparent calc(50% + .6px));
+  color: var(--ink-soft);
+  font-family: var(--font-display);
+  font-size: var(--fs-xl);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 6px;
+}
+
+/* Text input */
+.tw-input {
+  border: var(--border);
+  background: var(--card);
+  border-radius: var(--radius-md);
+  padding: 9px 12px;
+  font-family: var(--font-body);
+  font-size: var(--fs-md);
+  color: var(--ink);
+  box-shadow: var(--shadow-press);
+  transition: box-shadow var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+}
+.tw-input:focus { outline: none; border-color: var(--accent-cyan); box-shadow: 0 0 0 3px var(--focus-ring); }
+.tw-input::placeholder { color: var(--ink-faint); }
+
+/* Agent tag — colored mono pill with a dot */
+.tw-agent {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  border: 1.2px solid var(--ag, var(--ink));
+  border-radius: var(--radius-pill);
+  background: var(--ag-soft, var(--card));
+  color: var(--ag, var(--ink));
+  font-family: var(--font-mono);
+  font-size: var(--fs-mono-sm);
+  font-weight: 500;
+}
+.tw-agent .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ag, var(--ink)); }
+
+.ag-ba       { --ag: var(--accent-cyan);    --ag-soft: var(--accent-cyan-soft);   }
+.ag-arch     { --ag: var(--accent-violet);  --ag-soft: var(--accent-violet-soft); }
+.ag-se       { --ag: var(--accent-green);   --ag-soft: var(--accent-green-soft);  }
+.ag-rev      { --ag: var(--accent-pink);    --ag-soft: var(--accent-pink-soft);   }
+.ag-research { --ag: var(--accent-yellow);  --ag-soft: var(--accent-yellow-soft); }
+.ag-doc      { --ag: var(--ink-soft);       --ag-soft: var(--accent-doc-soft);    }
+
+/* Sticky top-nav grammar shared across product surfaces */
+.tw-topnav {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  background: rgba(244,241,232,0.86);
+  border-bottom: 1px solid var(--ink-line);
+}
+.tw-topnav-inner {
+  max-width: var(--container-max);
+  margin: 0 auto;
+  padding: 14px var(--gutter);
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}

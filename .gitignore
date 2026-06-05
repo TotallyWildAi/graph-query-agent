@@ -1,0 +1,12 @@
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# Project preview/system artifacts
+.thumbnail
+
+# Design-iteration screenshots (verification artifacts, not deliverables)
+screenshots/

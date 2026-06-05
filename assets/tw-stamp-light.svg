@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" width="80" height="80">
+  <g transform="rotate(-3 40 40)">
+    <rect x="6" y="6" width="68" height="68" rx="11" ry="13" fill="#FFFCF4" stroke="#1B1E2C" stroke-width="2.5"></rect>
+    <rect x="11" y="11" width="58" height="58" rx="8" ry="10" fill="none" stroke="#1B1E2C" stroke-width="1" stroke-dasharray="3 3" opacity="0.45"></rect>
+    <text x="40" y="56" text-anchor="middle" font-family="Caveat, &#39;Apple Chancery&#39;, cursive" font-weight="700" font-size="44" fill="#1B1E2C">TW</text>
+  </g>
+</svg>

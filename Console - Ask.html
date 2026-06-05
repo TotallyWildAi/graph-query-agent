@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Orchestration Console — Ask</title>
+<link rel="stylesheet" href="assets/colors_and_type.css">
+<link rel="stylesheet" href="assets/console-system.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<style>
+  html,body{ height:100%; }
+  body{ margin:0; }
+  /* scenario toggle in top bar */
+  .oc-seg{ display:inline-flex; border:1.5px solid var(--ink); border-radius: var(--r-sm); overflow:hidden; flex:none; }
+  .oc-seg button{ font-family: var(--font-mono); font-size:11px; letter-spacing:.04em; text-transform:uppercase; padding:6px 12px; border:none; background: var(--card); color: var(--ink-soft); cursor:pointer; }
+  .oc-seg button+button{ border-left:1.5px solid var(--ink); }
+  .oc-seg button.on{ background: var(--ink); color: var(--card); }
+  /* low-conf nudge */
+  .oc-nudge{ display:flex; gap:12px; align-items:flex-start; padding:14px 16px; border:1.5px solid var(--write); background: var(--write-soft); border-radius: var(--r-md); }
+  .oc-nudge i{ color: var(--write-ink); font-size:18px; margin-top:1px; }
+  .oc-cand{ display:flex; align-items:center; gap:10px; padding:10px 12px; border:1.5px solid var(--hair); border-radius: var(--r-sm); background: var(--card); }
+  .oc-cand .nm{ font-family: var(--font-mono); font-size:12.5px; }
+  .oc-cand .cf{ font-family: var(--font-mono); font-size:11px; color: var(--ink-faint); }
+  .work-section{ display:flex; flex-direction:column; gap:10px; }
+</style>
+</head>
+<body>
+<div class="oc">
+  <div class="oc-app">
+
+    <!-- ===================== LEFT RAIL ===================== -->
+    <aside class="oc-rail">
+      <div class="oc-brand"><img src="assets/tw-stamp-light.svg" alt=""><div class="wm">Console<small>orchestration</small></div></div>
+      <div class="oc-navgrp">Workspace</div>
+      <div class="oc-nav on"><i class="ph ph-terminal-window"></i> Ask</div>
+      <div class="oc-nav"><i class="ph ph-clock-counter-clockwise"></i> History</div>
+      <div class="oc-navgrp">Reference</div>
+      <div class="oc-nav"><i class="ph ph-list-checks"></i> Intent catalogue</div>
+      <div class="oc-nav"><i class="ph ph-plugs"></i> Tool registry</div>
+      <div class="oc-rail-foot">Read-only by default. Writes are gated, logged capabilities.</div>
+    </aside>
+
+    <!-- ===================== MAIN ===================== -->
+    <div class="oc-main">
+
+      <!-- top bar -->
+      <div class="oc-top">
+        <span class="crumb">Workspace / <b>Ask</b></span>
+        <span class="oc-seg" role="group" aria-label="Scenario">
+          <button id="segHigh" class="on" onclick="setScenario('high')">High confidence</button>
+          <button id="segLow" onclick="setScenario('low')">Ambiguous</button>
+        </span>
+        <span class="oc-spacer"></span>
+        <span class="oc-meta">request_id <b id="reqId">req_7f3a9c21</b></span>
+        <span class="oc-meta">graph_version <b>2026-06-04T09:00Z</b></span>
+        <span class="oc-btn ghost sm" onclick="resetFlow()"><i class="ph ph-arrow-counter-clockwise"></i> Reset</span>
+      </div>
+
+      <!-- master-detail split -->
+      <div class="oc-split">
+
+        <!-- ---------- WORK PANE (left) ---------- -->
+        <div class="oc-work">
+
+          <div class="work-section">
+            <span class="oc-eyebrow">Request</span>
+            <div class="oc-reqbox">
+              <input id="reqInput" class="q" value="Which pumps at the North plant are overdue for lubrication?" aria-label="Request">
+              <span class="oc-btn primary" id="matchBtn" onclick="doMatch()"><i class="ph ph-magnifying-glass"></i> Match</span>
+            </div>
+            <span class="oc-sub" style="font-size:11.5px;">A structured request, not a chat. The system maps it to a registered intent — it never writes free-form queries.</span>
+          </div>
+
+          <!-- matched intent panel (high conf) -->
+          <div id="intentPanel" class="oc-card" style="padding:18px 20px; display:none; flex-direction:column; gap:16px;">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="oc-eyebrow" style="margin:0;">Matched intent</span>
+              <span class="oc-spacer"></span>
+              <span class="oc-pill read"><span class="dot"></span>read</span>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:12px;">
+              <span class="oc-intent-name" id="intentName">assets_overdue_for_task</span>
+              <div class="oc-conf">
+                <span class="lbl">confidence</span>
+                <span class="track"><span class="fill" id="confFill" style="width:92%;"></span></span>
+                <span class="num" id="confNum">0.92</span>
+              </div>
+              <span class="oc-sub" id="confNote" style="font-size:12px;">Above the auto-run threshold (0.70). Confirm the parameters, then run.</span>
+            </div>
+
+            <div class="oc-divider"></div>
+
+            <div style="display:flex; flex-direction:column; gap:11px;">
+              <span class="oc-eyebrow" style="margin:0;">Parameters · editable before run</span>
+              <span class="oc-chip" style="justify-content:space-between;"><span><span class="key">site_id =</span> <span class="val">SITE-NORTH</span></span><span style="display:flex; gap:8px; align-items:center;"><span class="resolved">"North plant"</span><span class="edit"><i class="ph ph-pencil-simple"></i></span></span></span>
+              <span class="oc-chip" style="justify-content:space-between;"><span><span class="key">task_code =</span> <span class="val">LUBE-01</span></span><span style="display:flex; gap:8px; align-items:center;"><span class="resolved">"lubrication"</span><span class="edit"><i class="ph ph-pencil-simple"></i></span></span></span>
+            </div>
+
+            <div style="display:flex; align-items:center; gap:12px; padding-top:4px;">
+              <span class="oc-btn primary" id="runBtn" onclick="runPlan()"><i class="ph ph-play"></i> Confirm &amp; run plan</span>
+              <span class="oc-link" onclick="openTrace()"><i class="ph ph-tree-structure"></i> View full trace</span>
+            </div>
+          </div>
+
+          <!-- low-confidence nudge -->
+          <div id="nudgePanel" class="oc-card" style="padding:18px 20px; display:none; flex-direction:column; gap:14px;">
+            <div class="oc-nudge">
+              <i class="ph ph-question"></i>
+              <div>
+                <div style="font-weight:600; font-size:13.5px;">Needs clarification — confidence below threshold</div>
+                <div class="oc-sub" style="margin-top:4px;">Three registered capabilities could match. The console asks rather than guesses. Site resolved: <span style="font-family:var(--font-mono);">SITE-NORTH ✓</span></div>
+              </div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              <span class="oc-eyebrow" style="margin:0;">Candidate intents</span>
+              <div class="oc-cand"><span class="nm">assets_overdue_for_task</span><span class="oc-pill read" style="font-size:9px; padding:2px 7px;">read</span><span class="oc-spacer"></span><span class="cf">0.48</span></div>
+              <div class="oc-cand"><span class="nm">assets_by_site</span><span class="oc-pill read" style="font-size:9px; padding:2px 7px;">read</span><span class="oc-spacer"></span><span class="cf">0.41</span></div>
+              <div class="oc-cand"><span class="nm">asset_health_summary</span><span class="oc-pill read" style="font-size:9px; padding:2px 7px;">read</span><span class="oc-spacer"></span><span class="cf">0.33</span></div>
+            </div>
+            <div style="display:flex; align-items:center; gap:12px;">
+              <span class="oc-btn amber" onclick="openClarify()"><i class="ph ph-arrow-right"></i> Clarify &amp; choose a capability</span>
+              <span class="oc-sub" style="font-size:11.5px;">No query runs until one is chosen.</span>
+            </div>
+          </div>
+
+          <!-- result summary (complete) -->
+          <div id="resultSummary" class="oc-card" style="padding:16px 20px; display:none; align-items:center; gap:14px;">
+            <span class="oc-pill read"><span class="dot"></span>3 rows</span>
+            <span class="oc-sub">All 5 steps complete · every field carries lineage.</span>
+            <span class="oc-spacer"></span>
+            <span class="oc-btn primary" onclick="openResults()"><i class="ph ph-table"></i> View results</span>
+          </div>
+
+        </div>
+
+        <!-- ---------- EVIDENCE PANE (right) ---------- -->
+        <div class="oc-evidence">
+          <div class="oc-ev-head">
+            <i class="ph ph-path" style="font-size:18px;"></i>
+            <span class="oc-ev-title">Execution plan</span>
+            <span class="oc-spacer"></span>
+            <span class="oc-pill dim" id="evStatus"><span class="dot"></span>5 steps · pending</span>
+          </div>
+          <div class="oc-ev-body" id="evBody">
+
+            <!-- plan steps (rendered always; statuses toggled by JS) -->
+            <div class="oc-steps" id="steps">
+
+              <!-- step 1 -->
+              <div class="oc-step has-detail" data-step="1">
+                <span class="mk">1</span>
+                <div class="oc-step-head" onclick="toggleStep(1)">
+                  <div class="txt">
+                    <div class="t">Classify intent</div>
+                    <div class="d">deterministic router · temperature 0</div>
+                  </div>
+                  <i class="ph ph-caret-right caret"></i>
+                </div>
+                <div class="oc-step-detail">
+                  <div class="oc-detail-label">selected from registered intents</div>
+                  <div class="oc-code">selected  assets_overdue_for_task   <span class="pm">0.92</span>
+next-best assets_by_site            0.31
+next-best asset_health_summary      0.18</div>
+                </div>
+              </div>
+
+              <!-- step 2 -->
+              <div class="oc-step has-detail" data-step="2">
+                <span class="mk">2</span>
+                <div class="oc-step-head" onclick="toggleStep(2)">
+                  <div class="txt">
+                    <div class="t">Extract &amp; validate parameters</div>
+                    <div class="d">typed · schema + allow-list checked</div>
+                  </div>
+                  <i class="ph ph-caret-right caret"></i>
+                </div>
+                <div class="oc-step-detail">
+                  <div class="oc-detail-label">bound parameters</div>
+                  <div class="oc-kv">
+                    <span class="k">site_id</span><span class="v">"SITE-NORTH" · string · required ✓</span>
+                    <span class="k">task_code</span><span class="v">"LUBE-01" · string · required ✓</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- step 3 -->
+              <div class="oc-step has-detail" data-step="3">
+                <span class="mk">3</span>
+                <div class="oc-step-head" onclick="toggleStep(3)">
+                  <div class="txt">
+                    <div class="t">Run Cypher template <span style="font-family:var(--font-mono);">assets_overdue_for_task@3</span> <span class="oc-ro">read-only</span></div>
+                    <div class="d">parameterized · cost &amp; row guard ✓</div>
+                  </div>
+                  <i class="ph ph-caret-right caret"></i>
+                </div>
+                <div class="oc-step-detail">
+                  <div class="oc-detail-label">bound query</div>
+                  <div class="oc-code"><span class="kw">MATCH</span> (s:Site {id: <span class="pm">$site_id</span>})-[:CONTAINS]->(a:Asset)
+<span class="kw">MATCH</span> (a)&lt;-[:TARGETS]-(wo:WorkOrder)-[:EXECUTES]->(t:MaintenanceTask {code: <span class="pm">$task_code</span>})
+<span class="kw">WHERE</span> wo.due_date &lt; date() <span class="kw">AND</span> wo.status &lt;&gt; <span class="str">'CLOSED'</span>
+<span class="kw">RETURN</span> a.id, a.name, wo.due_date, wo.status <span class="kw">ORDER BY</span> wo.due_date</div>
+                  <div style="margin-top:12px;">
+                    <div class="oc-detail-label">node ids touched · 3 rows</div>
+                    <div class="oc-nodeids"><code>a:1042</code><code>a:1048</code><code>a:1055</code></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- step 4 -->
+              <div class="oc-step has-detail" data-step="4">
+                <span class="mk">4</span>
+                <div class="oc-step-head" onclick="toggleStep(4)">
+                  <div class="txt">
+                    <div class="t">Enrich via tool <span style="font-family:var(--font-mono);">snowflake_runtime_hours@2.1</span> <span class="oc-ro">read-only</span></div>
+                    <div class="d">source Snowflake · 612 ms · 1 attempt</div>
+                  </div>
+                  <i class="ph ph-caret-right caret"></i>
+                </div>
+                <div class="oc-step-detail">
+                  <div class="row" style="align-items:flex-start;">
+                    <div style="flex:1; min-width:0;">
+                      <div class="oc-detail-label">input</div>
+                      <div class="oc-code">{ "asset_ids":
+  ["P-101","P-104","P-110"] }</div>
+                    </div>
+                    <div style="flex:1; min-width:0;">
+                      <div class="oc-detail-label">output</div>
+                      <div class="oc-code">{ "P-101": 7420,
+  "P-104": 6980,
+  "P-110": 3110 }</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- step 5 -->
+              <div class="oc-step has-detail" data-step="5">
+                <span class="mk">5</span>
+                <div class="oc-step-head" onclick="toggleStep(5)">
+                  <div class="txt">
+                    <div class="t">Assemble response &amp; attach lineage</div>
+                    <div class="d">provenance stamped on every field</div>
+                  </div>
+                  <i class="ph ph-caret-right caret"></i>
+                </div>
+                <div class="oc-step-detail">
+                  <div class="oc-detail-label">per-field provenance · example</div>
+                  <div class="oc-code">field      asset → "Pump P-101"
+source     neo4j
+produced   assets_overdue_for_task@3 · [a:1042]
+runtime    snowflake_runtime_hours@2.1</div>
+                  <div style="margin-top:10px;"><span class="oc-link" onclick="openResults()"><i class="ph ph-table"></i> Open results + lineage</span></div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const steps = [1,2,3,4,5];
+  let timers = [];
+
+  function clearTimers(){ timers.forEach(t=>clearTimeout(t)); timers=[]; }
+
+  function setMarker(n, cls, glyph){
+    const step = document.querySelector(`.oc-step[data-step="${n}"]`);
+    step.classList.remove('pending','is-run');
+    const mk = step.querySelector('.mk');
+    mk.className = 'mk' + (cls ? ' '+cls : '');
+    if(cls==='run'){ step.classList.add('is-run'); mk.innerHTML = '<i class="ph ph-circle-notch oc-spin"></i>'; }
+    else if(cls==='done'){ mk.innerHTML = '<i class="ph ph-check"></i>'; }
+    else { mk.innerHTML = n; }
+    if(glyph!==undefined) mk.innerHTML = glyph;
+  }
+
+  function setStepState(n, state){ // 'done' | 'run' | 'pending'
+    const step = document.querySelector(`.oc-step[data-step="${n}"]`);
+    if(state==='pending'){ step.classList.add('pending'); setMarker(n,'',n); }
+    else if(state==='run'){ setMarker(n,'run'); }
+    else if(state==='done'){ setMarker(n,'done'); }
+  }
+
+  function toggleStep(n){
+    const step = document.querySelector(`.oc-step[data-step="${n}"]`);
+    step.classList.toggle('is-open');
+  }
+  function openStepDetail(n){ document.querySelector(`.oc-step[data-step="${n}"]`).classList.add('is-open'); }
+  function closeAllDetails(){ document.querySelectorAll('.oc-step').forEach(s=>s.classList.remove('is-open')); }
+
+  function setEvStatus(html, cls){
+    const el = document.getElementById('evStatus');
+    el.className = 'oc-pill ' + (cls||'dim');
+    el.innerHTML = '<span class="dot"></span>' + html;
+  }
+
+  // ---- scenarios ----
+  let scenario = 'high';
+  function setScenario(s){
+    scenario = s;
+    document.getElementById('segHigh').classList.toggle('on', s==='high');
+    document.getElementById('segLow').classList.toggle('on', s==='low');
+    document.getElementById('reqInput').value = s==='high'
+      ? 'Which pumps at the North plant are overdue for lubrication?'
+      : 'show me the north plant pumps';
+    resetFlow();
+  }
+
+  function resetFlow(){
+    clearTimers();
+    document.getElementById('intentPanel').style.display='none';
+    document.getElementById('nudgePanel').style.display='none';
+    document.getElementById('resultSummary').style.display='none';
+    document.getElementById('matchBtn').style.display='inline-flex';
+    steps.forEach(n=>setStepState(n,'pending'));
+    closeAllDetails();
+    setEvStatus('5 steps · pending');
+  }
+
+  function doMatch(){
+    document.getElementById('matchBtn').style.display='none';
+    if(scenario==='high'){
+      const p = document.getElementById('intentPanel');
+      p.style.display='flex';
+      document.getElementById('nudgePanel').style.display='none';
+      document.getElementById('confFill').style.width='92%';
+      document.getElementById('confFill').classList.remove('low');
+      document.getElementById('confNum').textContent='0.92';
+      setEvStatus('5 steps · ready');
+    } else {
+      document.getElementById('nudgePanel').style.display='flex';
+      document.getElementById('intentPanel').style.display='none';
+      setEvStatus('awaiting clarification','write');
+    }
+  }
+
+  function runPlan(){
+    document.getElementById('resultSummary').style.display='none';
+    closeAllDetails();
+    const seq = [
+      ()=>{ setStepState(1,'run'); setEvStatus('executing · step 1 of 5','accent'); },
+      ()=>{ setStepState(1,'done'); setStepState(2,'run'); setEvStatus('executing · step 2 of 5','accent'); },
+      ()=>{ setStepState(2,'done'); setStepState(3,'run'); openStepDetail(3); setEvStatus('executing · step 3 of 5','accent'); },
+      ()=>{ setStepState(3,'done'); setStepState(4,'run'); closeAllDetails(); openStepDetail(4); setEvStatus('executing · step 4 of 5','accent'); },
+      ()=>{ setStepState(4,'done'); setStepState(5,'run'); closeAllDetails(); setEvStatus('executing · step 5 of 5','accent'); },
+      ()=>{ setStepState(5,'done'); setEvStatus('complete · 0.67 s','read');
+            document.getElementById('resultSummary').style.display='flex'; }
+    ];
+    let d = 0;
+    seq.forEach((fn,i)=>{ timers.push(setTimeout(fn, d)); d += (i===2?900:650); });
+  }
+
+  function openResults(){ alert('→ Results + lineage screen (next in the set, once you approve this system).'); }
+  function openTrace(){ alert('→ Trace / audit screen (next in the set).'); }
+  function openClarify(){ alert('→ Clarification screen (next in the set).'); }
+
+  // land in matched-and-ready state so the key elements are visible immediately
+  document.getElementById('intentPanel').style.display='flex';
+  document.getElementById('matchBtn').style.display='none';
+  setEvStatus('5 steps · ready');
+</script>
+</body>
+</html>
