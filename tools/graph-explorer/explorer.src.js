@@ -42,9 +42,11 @@ PUMPS.forEach(([p,cls],pi)=>{
 });
 const adj = id => L.filter(l=>l.s===id||l.t===id).map(l=> l.s===id?l.t:l.s);
 const degHidden = id => adj(id).filter(n=>!graph.hasNode(n)).length;
+const nbCount = id => graph.hasNode(id) ? degHidden(id) : adj(id).length;  // expandable neighbours
 
 /* ---------------- SIGMA + FORCEATLAS2 ---------------- */
 let graph, renderer, fa2timer=null, sel=null;
+let query="", autoExpand=true, acItems=[], acIdx=-1;
 const $ = id => document.getElementById(id);
 
 function boot(){
@@ -55,9 +57,12 @@ function boot(){
       labelColor:{color:"#0A0B0D"}, defaultEdgeColor:"#C9CDD3", zIndex:true, minCameraRatio:0.05, maxCameraRatio:8,
     });
     renderer.on("clickNode", ({node})=>selectNode(node));
-    renderer.on("clickStage", ()=>closeDetail());
+    renderer.on("clickStage", ()=>{ closeDetail(); closeAc(); });
+    applyReducers();
     buildLegend();
     seed();
+    // close the autocomplete when clicking outside the search
+    document.addEventListener("mousedown", e=>{ if(!e.target.closest(".gx-searchwrap")) closeAc(); });
   } catch (e) {
     console.error(e);
     const err=$("gxErr"); if(err) err.classList.add("show");
@@ -102,6 +107,17 @@ function expandAll(){ Object.keys(N).forEach(id=>addNode(id)); syncEdges(); refr
 
 function fit(){ if(renderer) renderer.getCamera().animatedReset({duration:500}); }
 function zoomBy(dir){ const cam=renderer.getCamera(); dir==="in"?cam.animatedZoom(1.5):cam.animatedUnzoom(1.5); }
+function centerOn(id){ try{ const d=renderer.getNodeDisplayData(id); if(d){ const cam=renderer.getCamera();
+  cam.animate({x:d.x, y:d.y, ratio:Math.min(cam.getState().ratio,0.55)}, {duration:520}); } }catch(e){} }
+
+/* bring a node into view (add if missing), optionally pull in its neighbours, select + center */
+function focusNode(id, expandIt){
+  const fresh = !graph.hasNode(id);
+  if(fresh) addNode(id);
+  if(expandIt) adj(id).forEach(nb=>addNode(nb,id));
+  syncEdges(); refreshCount(); selectNode(id); runLayout(2200);
+  setTimeout(()=>centerOn(id), fresh||expandIt ? 700 : 0);
+}
 
 function selectNode(id){
   sel=id; const n=N[id], t=TYPE[n.type];
@@ -114,19 +130,64 @@ function selectNode(id){
   const hid=degHidden(id), btn=$("gxdExpand");
   btn.style.display=hid>0?"inline-flex":"none"; btn.innerHTML=`<i class="ph ph-graph"></i> Expand ${hid} neighbour${hid!==1?"s":""}`;
   $("gxDetail").classList.add("open");
+  applyReducers();
 }
-function closeDetail(){ $("gxDetail").classList.remove("open"); sel=null; }
+function closeDetail(){ $("gxDetail").classList.remove("open"); sel=null; applyReducers(); }
 
-let query="";
-function searchNodes(q){ query=q.trim().toLowerCase();
-  renderer.setSetting("nodeReducer", (node,data)=>{ if(!query) return data;
-    const n=N[node]; const hit=node.toLowerCase().includes(query)||(n&&n.label.toLowerCase().includes(query));
-    return hit?data:{...data, color:"#E4E5E8", label:"", zIndex:0}; });
+/* combined reducer: highlight the selection, dim non-matches while searching */
+function applyReducers(){
+  if(!renderer) return;
+  renderer.setSetting("nodeReducer", (node, data)=>{
+    if(node===sel) return {...data, highlighted:true, zIndex:3, forceLabel:true};
+    if(query){ const n=N[node]; const hit=node.toLowerCase().includes(query)||(n&&n.label.toLowerCase().includes(query));
+      if(!hit) return {...data, color:"#E4E5E8", label:"", zIndex:0}; }
+    return data;
+  });
 }
+
+/* ---------------- SEARCH + AUTOCOMPLETE ---------------- */
+function acInput(q){
+  query=q.trim().toLowerCase(); applyReducers();
+  if(!query){ closeAc(); return; }
+  const m = Object.values(N)
+    .map(n=>({n, idx: (n.id.toLowerCase().includes(query)?n.id.toLowerCase().indexOf(query):99) }))
+    .filter(x=> x.n.id.toLowerCase().includes(query) || x.n.label.toLowerCase().includes(query))
+    .sort((a,b)=> a.idx-b.idx || a.n.id.localeCompare(b.n.id))
+    .slice(0,8).map(x=>x.n);
+  acItems=m; acIdx = m.length?0:-1; renderAc();
+}
+function renderAc(){
+  const ac=$("gxAc");
+  if(!acItems.length){ closeAc(); return; }
+  ac.innerHTML = acItems.map((n,i)=>{
+    const t=TYPE[n.type], cnt=nbCount(n.id), here=graph.hasNode(n.id);
+    return `<div class="gx-ac-row${i===acIdx?' hot':''}" data-id="${n.id}" onmousedown="acPick('${n.id}',event)">
+      <span class="acdot" style="background:${t.color}"></span>
+      <span class="aclab">${n.label}</span><span class="acid">${n.id}</span>
+      <span class="oc-spacer"></span>
+      ${cnt>0 ? `<button class="ac-exp" title="Expand ${cnt} neighbour${cnt!==1?'s':''}" onmousedown="acExpand('${n.id}',event)">+${cnt}</button>`
+              : `<span class="ac-here">${here?'shown':'leaf'}</span>`}
+    </div>`;
+  }).join("");
+  ac.classList.add("open");
+}
+function acKey(e){
+  if(!acItems.length){ if(e.key==="Escape") closeAc(); return; }
+  if(e.key==="ArrowDown"){ e.preventDefault(); acIdx=(acIdx+1)%acItems.length; renderAc(); }
+  else if(e.key==="ArrowUp"){ e.preventDefault(); acIdx=(acIdx-1+acItems.length)%acItems.length; renderAc(); }
+  else if(e.key==="Enter"){ e.preventDefault(); if(acIdx>=0) acPick(acItems[acIdx].id); }
+  else if(e.key==="Escape"){ closeAc(); }
+}
+function acPick(id, e){ if(e){ e.preventDefault(); } focusNode(id, autoExpand); closeAc(); }
+function acExpand(id, e){ e.preventDefault(); e.stopPropagation(); focusNode(id, true); renderAc(); }  // keep dropdown open, refresh +N
+function closeAc(){ const ac=$("gxAc"); if(ac){ ac.classList.remove("open"); ac.innerHTML=""; } acItems=[]; acIdx=-1; }
+function setAuto(on){ autoExpand=on; }
+
 function buildLegend(){ $("gxLegend").innerHTML=Object.entries(TYPE).filter(([k])=>k!=="Reading"&&k!=="AssetClass")
   .map(([k,t])=>`<span class="lk"><span class="sw" style="background:${t.color}"></span>${k}</span>`).join(""); }
 
-/* expose handlers used by inline onclick / oninput in the HTML */
-Object.assign(window, { seed, expand, expandSelected, expandAll, fit, zoomBy, selectNode, closeDetail, searchNodes });
+/* expose handlers used by inline onclick / oninput / onkeydown in the HTML */
+Object.assign(window, { seed, expand, expandSelected, expandAll, fit, zoomBy, selectNode, closeDetail,
+  acInput, acKey, acPick, acExpand, setAuto });
 window.GXReady = true;
 window.addEventListener("load", boot);
