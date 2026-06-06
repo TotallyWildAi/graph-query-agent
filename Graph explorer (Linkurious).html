@@ -27,13 +27,16 @@
 
   .gx-edge{ stroke:#C9CDD3; stroke-width:1.2; }
   .gx-edge.hot{ stroke:var(--accent-cyan); stroke-width:2; }
-  .gx-elabel{ font-family:var(--font-mono); font-size:8.5px; fill:var(--ink-faint); paint-order:stroke; stroke:#fbfbfc; stroke-width:3px; }
+  .gx-elabel{ font-family:var(--font-mono); font-size:8.5px; fill:var(--ink-faint); paint-order:stroke; stroke:#fbfbfc; stroke-width:3px; opacity:0; transition:opacity .15s; }
   .gx-node{ cursor:pointer; }
   .gx-node circle.body{ stroke:#fff; stroke-width:2.5; transition:filter .15s; }
   .gx-node.sel circle.body{ stroke:var(--ink); stroke-width:3; }
   .gx-node.dim{ opacity:.25; }
   .gx-node .ico{ font-size:14px; fill:#fff; }
-  .gx-label{ font-family:var(--font-body); font-size:10.5px; font-weight:500; fill:var(--ink); paint-order:stroke; stroke:#fbfbfc; stroke-width:3.5px; text-anchor:middle; }
+  .gx-label{ font-family:var(--font-body); font-size:10.5px; font-weight:500; fill:var(--ink); paint-order:stroke; stroke:#fbfbfc; stroke-width:3.5px; text-anchor:middle; opacity:0; transition:opacity .15s; }
+  /* legibility: only label hubs / hovered / selected; reveal everything when zoomed in */
+  .gx-node.hub .gx-label, .gx-node.hover .gx-label, .gx-node.sel .gx-label{ opacity:1; }
+  #gx-svg.zoomed .gx-label, #gx-svg.zoomed .gx-elabel{ opacity:1; }
   .gx-badge circle{ fill:var(--ink); } .gx-badge text{ fill:#fff; font-family:var(--font-mono); font-size:8px; text-anchor:middle; }
 
   /* floating detail panel */
@@ -187,7 +190,8 @@ function degHidden(id){ return adj(id).filter(n=>!vis.has(n)).length; }
 const svg=document.getElementById('gx-svg'), gView=document.getElementById('gx-view');
 const gE=document.getElementById('gx-edges'), gEL=document.getElementById('gx-elabels'), gN=document.getElementById('gx-nodes');
 let view={k:1,tx:0,ty:0};
-function applyView(){ gView.setAttribute('transform',`translate(${view.tx},${view.ty}) scale(${view.k})`); }
+const LABEL_MIN_DEGREE=6;  /* only hub nodes carry a persistent label */
+function applyView(){ gView.setAttribute('transform',`translate(${view.tx},${view.ty}) scale(${view.k})`); svg.classList.toggle('zoomed', view.k>1.5); }
 
 function render(){
   // edges
@@ -199,7 +203,7 @@ function render(){
   [...vis].forEach(id=>{
     const n=N[id], t=TYPE[n.type]; const hidden=degHidden(id);
     const g=document.createElementNS('http://www.w3.org/2000/svg','g');
-    g.setAttribute('class','gx-node'+(sel===id?' sel':'')); g.dataset.id=id;
+    g.setAttribute('class','gx-node'+(sel===id?' sel':'')+(adj(id).length>=LABEL_MIN_DEGREE?' hub':'')); g.dataset.id=id;
     g.innerHTML=`<circle class="body" r="${t.r}" fill="${t.color}"></circle>
       <foreignObject x="${-t.r}" y="${-t.r}" width="${t.r*2}" height="${t.r*2}" style="pointer-events:none">
         <div xmlns="http://www.w3.org/1999/xhtml" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:${Math.round(t.r*0.85)}px">
@@ -246,6 +250,8 @@ function reheat(){ alpha=1; }
 /* ====================== INTERACTION ====================== */
 function toGraph(px,py){ const r=svg.getBoundingClientRect(); return { x:(px-r.left-view.tx)/view.k, y:(py-r.top-view.ty)/view.k }; }
 
+gN.addEventListener('pointerover', e=>{ const g=e.target.closest('.gx-node'); if(g) g.classList.add('hover'); });
+gN.addEventListener('pointerout', e=>{ const g=e.target.closest('.gx-node'); if(g) g.classList.remove('hover'); });
 gN.addEventListener('pointerdown', e=>{ const g=e.target.closest('.gx-node'); if(!g) return;
   dragId=g.dataset.id; svg.setPointerCapture(e.pointerId); e.stopPropagation();
 });

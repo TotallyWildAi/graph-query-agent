@@ -10,10 +10,9 @@
   html,body{ height:100%; }
   body{ margin:0; }
 
-  .oc-seg{ display:inline-flex; border:1.5px solid var(--ink); border-radius: var(--r-sm); overflow:hidden; flex:none; }
-  .oc-seg button{ font-family: var(--font-mono); font-size:11px; letter-spacing:.04em; text-transform:uppercase; padding:6px 12px; border:none; background: var(--card); color: var(--ink-soft); cursor:pointer; }
-  .oc-seg button+button{ border-left:1.5px solid var(--ink); }
-  .oc-seg button.on{ background: var(--ink); color: var(--card); }
+  .oc-seg{ display:inline-flex; background: var(--card-sunk); border:none; border-radius:999px; padding:3px; flex:none; }
+  .oc-seg button{ font-family: var(--font-mono); font-size:11px; letter-spacing:.04em; text-transform:uppercase; padding:6px 14px; border:none; border-radius:999px; background:none; color: var(--ink-soft); cursor:pointer; transition:all var(--dur-fast) var(--ease); }
+  .oc-seg button.on{ background: var(--ink); color:#fff; }
 
   /* audit header */
   .aud-head{ padding:18px 20px; }
@@ -39,7 +38,7 @@
   .att .fail{ color: var(--err); }
 
   .ins-banner{ display:flex; align-items:center; gap:10px; padding:12px 14px; border:1.5px solid; border-radius: var(--r-sm); font-size:13px; margin-bottom:18px; }
-  .ins-banner.read{ border-color: var(--ink); background: var(--card); }
+  .ins-banner.read{ border-color: var(--ink-line); background: var(--card); }
   .ins-banner.err{ border-color: var(--err); background: var(--err-soft); }
   .ins-banner.write{ border-color: var(--write); background: var(--write-soft); }
   .ins-banner .ic{ font-size:20px; }

@@ -278,6 +278,12 @@ hr{ border:0; border-top:1px solid var(--ink-line); margin:var(--space-7) 0; }
 .oc-spin{ display:inline-block; animation:oc-spin 1s linear infinite; }
 @media (prefers-reduced-motion:reduce){ .oc-spin{ animation:none; } }
 
+/* segmented toggle — shared pill (single definition; screens should not redefine) */
+.oc-seg{ display:inline-flex; background:var(--card-sunk); border:none; border-radius:999px; padding:3px; flex:none; }
+.oc-seg button{ font-family:var(--font-mono); font-size:11px; letter-spacing:.04em; text-transform:uppercase; padding:6px 14px; border:none; border-radius:999px; background:none; color:var(--ink-soft); cursor:pointer; transition:all var(--dur-fast) var(--ease); }
+.oc-seg button:hover{ color:var(--ink); }
+.oc-seg button.on{ background:var(--ink); color:#fff; }
+
 /* evidence empty state */
 .oc-empty{ height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:12px; color:var(--ink-faint); padding:40px; }
 .oc-empty .glyph{ width:54px; height:54px; border:1.5px dashed var(--hair); border-radius:var(--r-md); display:grid; place-items:center; font-size:26px; color:var(--ink-faint); }
