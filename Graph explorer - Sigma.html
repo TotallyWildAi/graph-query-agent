@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Orchestration Console — Graph explorer (Sigma.js) · Linkurious direction</title>
-<link rel="stylesheet" href="assets/linkurious-system.css">
+<title>Orchestration Console — Graph explorer (Sigma.js)</title>
+<link rel="stylesheet" href="assets/console-system.css">
 <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
 <!-- graph stack bundled locally (graphology + Sigma.js WebGL + real ForceAtlas2);
      built from tools/graph-explorer via esbuild → assets/graph-explorer.bundle.js (loaded at end of body) -->
@@ -51,13 +51,13 @@
     <aside class="oc-rail">
       <div class="oc-brand"><img src="assets/tw-stamp-light.svg" alt=""><div class="wm">Console<small>orchestration</small></div></div>
       <div class="oc-navgrp">Workspace</div>
-      <a class="oc-nav" href="Console - Ask (Linkurious).html" style="text-decoration:none;"><i class="ph ph-terminal-window"></i> Ask</a>
-      <a class="oc-nav" href="Results - Lineage (Linkurious).html" style="text-decoration:none;"><i class="ph ph-table"></i> Results</a>
-      <a class="oc-nav" href="Trace - Audit (Linkurious).html" style="text-decoration:none;"><i class="ph ph-tree-structure"></i> Trace</a>
+      <a class="oc-nav" href="Console - Ask.html" style="text-decoration:none;"><i class="ph ph-terminal-window"></i> Ask</a>
+      <a class="oc-nav" href="Results - Lineage.html" style="text-decoration:none;"><i class="ph ph-table"></i> Results</a>
+      <a class="oc-nav" href="Trace - Audit.html" style="text-decoration:none;"><i class="ph ph-tree-structure"></i> Trace</a>
       <div class="oc-navgrp">Reference</div>
-      <a class="oc-nav" href="Intent catalogue (Linkurious).html" style="text-decoration:none;"><i class="ph ph-list-checks"></i> Intent catalogue</a>
-      <a class="oc-nav" href="Tool registry (Linkurious).html" style="text-decoration:none;"><i class="ph ph-plugs"></i> Tool registry</a>
-      <a class="oc-nav" href="Graph schema (Linkurious).html" style="text-decoration:none;"><i class="ph ph-graph"></i> Graph schema</a>
+      <a class="oc-nav" href="Intent catalogue.html" style="text-decoration:none;"><i class="ph ph-list-checks"></i> Intent catalogue</a>
+      <a class="oc-nav" href="Tool registry.html" style="text-decoration:none;"><i class="ph ph-plugs"></i> Tool registry</a>
+      <a class="oc-nav" href="Graph schema.html" style="text-decoration:none;"><i class="ph ph-graph"></i> Graph schema</a>
       <div class="oc-nav on"><i class="ph ph-share-network"></i> Graph explorer</div>
       <div class="oc-rail-foot">WebGL render via Sigma.js + ForceAtlas2. Read-only — every node carries source &amp; ID.</div>
     </aside>
@@ -67,7 +67,7 @@
         <span class="crumb">Workspace / <b>Graph explorer</b></span>
         <span class="gx-engine"><i class="ph ph-lightning"></i> sigma.js · forceatlas2 · webgl</span>
         <span class="oc-spacer"></span>
-        <a class="oc-link" href="Graph explorer (Linkurious).html"><i class="ph ph-arrow-u-up-left"></i> no-dependency version</a>
+        <a class="oc-link" href="Graph explorer.html"><i class="ph ph-arrow-u-up-left"></i> no-dependency version</a>
         <span class="oc-pill read"><span class="dot"></span>read-only</span>
       </div>
 
@@ -96,7 +96,7 @@
         </div>
         <div class="gx-status"><span class="gx-chip"><span class="dot"></span><span id="gxCount">…</span></span></div>
         <div class="gx-zoom"><button onclick="zoomBy('out')"><i class="ph ph-minus"></i></button><button onclick="zoomBy('in')"><i class="ph ph-plus"></i></button><button onclick="fit()" title="Fit"><i class="ph ph-crosshair"></i></button></div>
-        <div class="gx-err" id="gxErr"><div class="oc-empty"><div class="glyph"><i class="ph ph-wifi-slash"></i></div><div class="ttl">Graph libraries didn’t load</div><div class="oc-sub">The bundled graph engine (assets/graph-explorer.bundle.js) failed to load. Rebuild it with <code>npm install &amp;&amp; npm run build</code> in tools/graph-explorer, or use the <a href="Graph explorer (Linkurious).html">no-dependency version</a>.</div></div></div>
+        <div class="gx-err" id="gxErr"><div class="oc-empty"><div class="glyph"><i class="ph ph-wifi-slash"></i></div><div class="ttl">Graph libraries didn’t load</div><div class="oc-sub">The bundled graph engine (assets/graph-explorer.bundle.js) failed to load. Rebuild it with <code>npm install &amp;&amp; npm run build</code> in tools/graph-explorer, or use the <a href="Graph explorer.html">no-dependency version</a>.</div></div></div>
       </div>
     </div>
   </div>

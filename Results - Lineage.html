@@ -4,18 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Orchestration Console — Results + Lineage</title>
-<link rel="stylesheet" href="assets/colors_and_type.css">
 <link rel="stylesheet" href="assets/console-system.css">
 <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
 <style>
   html,body{ height:100%; }
   body{ margin:0; }
 
-  /* scenario toggle in top bar (matches Ask) */
-  .oc-seg{ display:inline-flex; border:1.5px solid var(--ink); border-radius: var(--r-sm); overflow:hidden; flex:none; }
-  .oc-seg button{ font-family: var(--font-mono); font-size:11px; letter-spacing:.04em; text-transform:uppercase; padding:6px 12px; border:none; background: var(--card); color: var(--ink-soft); cursor:pointer; }
-  .oc-seg button+button{ border-left:1.5px solid var(--ink); }
-  .oc-seg button.on{ background: var(--ink); color: var(--card); }
+  /* scenario toggle in top bar (shared pill — matches Ask) */
+  .oc-seg{ display:inline-flex; background: var(--card-sunk); border:none; border-radius:999px; padding:3px; flex:none; }
+  .oc-seg button{ font-family: var(--font-mono); font-size:11px; letter-spacing:.04em; text-transform:uppercase; padding:6px 14px; border:none; border-radius:999px; background:none; color: var(--ink-soft); cursor:pointer; transition:all var(--dur-fast) var(--ease); }
+  .oc-seg button.on{ background: var(--ink); color:#fff; }
 
   /* results header card */
   .res-head{ display:flex; align-items:flex-start; gap:16px; padding:18px 20px; flex-wrap:wrap; }
@@ -25,9 +23,9 @@
   /* results table is 6 columns — widen the work pane so runtime hrs isn't clipped */
   .oc-split{ grid-template-columns: minmax(600px, 1.4fr) .9fr; }
   /* results table */
-  .res-table-wrap{ border:1.5px solid var(--ink); border-radius: var(--r-md); overflow-x:auto; box-shadow: var(--shadow-rest); background: var(--card); }
+  .res-table-wrap{ border:1px solid var(--ink-line); border-radius: var(--r-md); overflow-x:auto; box-shadow: var(--shadow-rest); background: var(--card); }
   table.res{ width:100%; border-collapse:collapse; font-size:13px; }
-  table.res thead th{ font-family: var(--font-mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase; color: var(--ink-faint); text-align:left; padding:10px 12px; border-bottom:1.5px solid var(--ink); background: var(--paper-warm); white-space:nowrap; }
+  table.res thead th{ font-family: var(--font-mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase; color: var(--ink-faint); text-align:left; padding:10px 12px; border-bottom:1px solid var(--ink-line); background: var(--paper-warm); white-space:nowrap; }
   table.res thead th.tool-col{ color: var(--ink-soft); }
   table.res thead th .toolflag{ display:inline-flex; align-items:center; gap:5px; color: var(--ink-soft); border-bottom:1.5px dashed var(--ink-soft); padding-bottom:1px; }
   table.res tbody td{ padding:0; border-bottom:1px solid var(--ink-line); vertical-align:middle; }
@@ -46,7 +44,7 @@
   .cell.plain:hover{ background:transparent; }
 
   /* source dot prefix */
-  .srcdot{ width:9px; height:9px; border-radius:50%; border:1.5px solid var(--ink); flex:none; }
+  .srcdot{ width:9px; height:9px; border-radius:50%; border:1.5px solid var(--ink-soft); flex:none; }
   .srcdot.tool{ border-style:dashed; border-color: var(--write); background: var(--write-soft); }
   .srcdot.graph{ background: var(--card); }
 
@@ -57,12 +55,12 @@
   /* status pill (neutral states, not read/write) */
   .stat{ display:inline-flex; align-items:center; gap:6px; font-family: var(--font-mono); font-size:10px; letter-spacing:.05em; text-transform:uppercase; border-radius:999px; padding:3px 9px; border:1.5px solid var(--ink-line); color: var(--ink-soft); background: var(--card); }
   .stat .d{ width:6px; height:6px; border-radius:50%; background: var(--ink-faint); }
-  .stat.prog{ border-color: var(--ink); color: var(--ink); }
+  .stat.prog{ border-color: var(--ink-line); color: var(--ink); }
   .stat.prog .d{ background: var(--ink); }
 
   /* lineage drawer (evidence pane face 1) */
   .lin-src{ display:flex; align-items:center; gap:10px; padding:12px 14px; border:1.5px solid; border-radius: var(--r-sm); font-size:13px; }
-  .lin-src.graph{ border-color: var(--ink); background: var(--card); }
+  .lin-src.graph{ border-color: var(--ink-line); background: var(--card); }
   .lin-src.tool{ border-color: var(--write); background: var(--write-soft); }
   .lin-src .ic{ font-size:20px; }
   .lin-src.graph .ic{ color: var(--ink); }
@@ -105,6 +103,7 @@
       <a class="oc-nav" href="Intent catalogue.html" style="text-decoration:none;"><i class="ph ph-list-checks"></i> Intent catalogue</a>
       <a class="oc-nav" href="Tool registry.html" style="text-decoration:none;"><i class="ph ph-plugs"></i> Tool registry</a>
       <a class="oc-nav" href="Graph schema.html" style="text-decoration:none;"><i class="ph ph-graph"></i> Graph schema</a>
+      <a class="oc-nav" href="Graph explorer - Sigma.html" style="text-decoration:none;"><i class="ph ph-share-network"></i> Graph explorer</a>
       <div class="oc-rail-foot">Read-only by default. Writes are gated, logged capabilities.</div>
     </aside>
 

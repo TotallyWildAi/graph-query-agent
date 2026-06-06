@@ -4,17 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Orchestration Console — Clarification</title>
-<link rel="stylesheet" href="assets/colors_and_type.css">
 <link rel="stylesheet" href="assets/console-system.css">
 <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
 <style>
   html,body{ height:100%; }
   body{ margin:0; }
 
-  .oc-seg{ display:inline-flex; border:1.5px solid var(--ink); border-radius: var(--r-sm); overflow:hidden; flex:none; }
-  .oc-seg button{ font-family: var(--font-mono); font-size:11px; letter-spacing:.04em; text-transform:uppercase; padding:6px 12px; border:none; background: var(--card); color: var(--ink-soft); cursor:pointer; }
-  .oc-seg button+button{ border-left:1.5px solid var(--ink); }
-  .oc-seg button.on{ background: var(--ink); color: var(--card); }
+  .oc-seg{ display:inline-flex; background: var(--card-sunk); border:none; border-radius:999px; padding:3px; flex:none; }
+  .oc-seg button{ font-family: var(--font-mono); font-size:11px; letter-spacing:.04em; text-transform:uppercase; padding:6px 14px; border:none; border-radius:999px; background:none; color: var(--ink-soft); cursor:pointer; transition:all var(--dur-fast) var(--ease); }
+  .oc-seg button.on{ background: var(--ink); color:#fff; }
 
   /* echoed request */
   .echo{ padding:18px 20px; }
@@ -43,7 +41,7 @@
   .field-row{ display:flex; flex-direction:column; gap:6px; }
   .field-lab{ font-family: var(--font-mono); font-size:11px; color: var(--ink-faint); letter-spacing:.04em; }
   .field-lab .req{ color: var(--marker); }
-  .field-in{ display:flex; align-items:center; gap:10px; border:1.5px solid var(--ink); border-radius: var(--r-sm); padding:10px 12px; background: var(--card); font-family: var(--font-mono); font-size:13px; }
+  .field-in{ display:flex; align-items:center; gap:10px; border:1px solid var(--ink-line); border-radius: var(--r-sm); padding:10px 12px; background: var(--card); font-family: var(--font-mono); font-size:13px; }
   .field-in.resolved{ border-color: var(--read); background: var(--read-soft); color: var(--read-ink); }
   .field-in.empty{ border-style:dashed; color: var(--ink-faint); }
   .field-in input{ border:none; outline:none; background:transparent; font:inherit; color: var(--ink); flex:1; }
@@ -71,6 +69,7 @@
       <a class="oc-nav" href="Intent catalogue.html" style="text-decoration:none;"><i class="ph ph-list-checks"></i> Intent catalogue</a>
       <a class="oc-nav" href="Tool registry.html" style="text-decoration:none;"><i class="ph ph-plugs"></i> Tool registry</a>
       <a class="oc-nav" href="Graph schema.html" style="text-decoration:none;"><i class="ph ph-graph"></i> Graph schema</a>
+      <a class="oc-nav" href="Graph explorer - Sigma.html" style="text-decoration:none;"><i class="ph ph-share-network"></i> Graph explorer</a>
       <div class="oc-rail-foot">The console asks rather than guesses. It only runs reviewed, registered capabilities.</div>
     </aside>
 

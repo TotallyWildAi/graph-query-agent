@@ -2,7 +2,7 @@
    Graph explorer (Sigma.js) — bundled entry
    graphology (model) + Sigma.js (WebGL renderer) + ForceAtlas2 (layout).
    Bundled to ../../assets/graph-explorer.bundle.js via `npm run build`.
-   Drives the markup in "Graph explorer - Sigma (Linkurious).html".
+   Drives the markup in "Graph explorer - Sigma.html".
    ===================================================================== */
 import Graph from "graphology";
 import Sigma from "sigma";

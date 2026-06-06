@@ -9,9 +9,13 @@ front-end for a controlled agent that turns plain-English requests into reviewed
 Cypher queries over a Neo4j knowledge graph plus registered tools, where every returned value is
 traceable to the query, node IDs, and tool call that produced it.
 
-There is **no build step, no package manager, no test suite, no backend code here**. The
-deliverables are self-contained `.html` files plus a shared CSS design system. The actual service
+The deliverables are self-contained `.html` files plus a shared CSS design system. There is **no
+backend and no database** — all data is illustrative and baked into the screens. The actual service
 described by the design lives elsewhere; `docs/orchestration-agent-spec.md` is its spec.
+
+The one build artifact is `assets/graph-explorer.bundle.js` (the graph engine for the Sigma
+explorer), produced by a small esbuild project in `tools/graph-explorer/`. **The bundle is
+committed**, so every screen opens with no build; only regenerating it needs `npm install && npm run build`.
 
 ## The product constraint that drives every design decision
 
@@ -29,51 +33,51 @@ Do not introduce free-form chat chrome or "AI suggestion" affordances.
 
 ## Viewing / running
 
-No build. Open any `.html` in a browser, or serve the folder (the explorations file fetches local
-`.js` over HTTP, so use a server for that one):
+Open `index.html` in a browser, or serve the folder, or run the container:
 
 ```bash
-python3 -m http.server 8000
-# http://localhost:8000/Console%20-%20Ask.html
+python3 -m http.server 8000     # http://localhost:8000/
+docker compose up --build       # http://localhost:8080/
 ```
 
-Fonts (Inter, JetBrains Mono, Caveat) load from Google Fonts; icons from the Phosphor CDN;
-`Console Explorations.html` loads React 18 + Babel standalone from unpkg. All external — needs network.
+Fonts (Space Grotesk, Roboto, Roboto Mono) load from Google Fonts; icons from the Phosphor CDN —
+external, so a running container needs network to render them. The graph engine is bundled locally.
 
 ## Architecture
 
-**Design system (locked) — `assets/console-system.css`.** This is the source of truth for all
-components. It **requires `assets/colors_and_type.css` to be loaded first** (it consumes those CSS
-variables — `--ink`, `--paper`, `--accent-cyan`, etc.). Every class is namespaced `oc-*` and lives
-under a root `.oc` element that defines the status/accent aliases. Clean mode = 6px radii.
+**Design system — `assets/console-system.css`.** Self-contained source of truth for all components
+(it defines its own tokens — no other CSS file is required). Every class is namespaced `oc-*` and
+lives under a root `.oc` element that defines the status/accent aliases.
 
+- **Aesthetic:** white / light-grey surfaces, near-black ink, light hairlines, soft shadows, a dark
+  left rail, a single bright-blue accent. Type: Space Grotesk (display), Roboto (UI), Roboto Mono
+  (IDs/Cypher/params). Rounded radii (8–12px), pill buttons.
 - **Status color encoding is a hard rule:** read = green (calm, default), write = amber
-  (side-effect, needs confirmation), error = marker-red, accent = cyan (interactive / confidence /
-  links). Use the `.oc-pill.read/.write/.err` and `.oc-ro`/`.oc-wo` badges — don't invent colors.
+  (side-effect, needs confirmation), error = red, accent = blue (interactive / confidence / links).
+  Use the `.oc-pill.read/.write/.err` and `.oc-ro`/`.oc-wo` badges — don't invent colors.
 - **Structural pattern = master–detail** (`.oc-split`): work/list on the left, **evidence pane on
   the right carrying real visual weight**. Generalizes across screens (Results→lineage drawer,
   Trace→step inspector, Catalogue→template detail). Collapses to one column ≤1080px; rail hidden ≤720px.
 - Key components: `.oc-app`/`.oc-rail`/`.oc-top` shell, `.oc-reqbox` (structured request box, *not*
   a chat input), intent + `.oc-conf` confidence meter, editable `.oc-chip` param chips, `.oc-code`
-  monospace block (Cypher/IDs/params read as "evidence"), and the vertical `.oc-steps` step tracker
-  with inline-expanded inspector.
+  monospace block (Cypher/IDs/params read as "evidence"), the vertical `.oc-steps` step tracker with
+  inline-expanded inspector, and the `.oc-seg` segmented toggle.
 
-**Screens.**
-- `Console - Ask.html` — ⭐ the **locked, hi-fi reference screen**. Standalone (links the two CSS
-  files + Phosphor; has inline `<script>` for the step-tracker demo). The remaining five screens
-  (Results+lineage, Clarification, Trace/audit, Intent catalogue, Tool registry) are pending and
-  must inherit this same visual system and master-detail pattern.
-- `Console Explorations.html` — a compare canvas (A/B/C layout directions). It renders via React +
-  Babel: `design-canvas.jsx` provides a Figma-ish `DesignCanvas` wrapper, and `consoles/variation-{a,b,c}.js`
-  each export an HTML string to `window.OC_VAR_A/B/C` that the canvas injects. Edit a variation by
-  editing its `.js` string. `variation-a` (vertical flow) is the responsive single-column fallback.
-- `wireframes/Orchestration Console - Wireframes.html` — grayscale lo-fi, all 7 screens + screen map.
+**Screens** (all on the shared system + master-detail pattern; `index.html` links them all):
+- `Console - Ask.html` — ⭐ the reference screen: request box → matched intent + confidence →
+  editable params → step tracker. Includes the **write-approval gate + modal** (Write-action
+  scenario) and the low-confidence clarification path (scenario toggle in the top bar).
+- `Results - Lineage.html`, `Trace - Audit.html`, `Clarification.html`, `Intent catalogue.html`,
+  `Tool registry.html`, `Graph schema.html` — the supporting screens.
+- `Graph explorer.html` — live instance graph, self-contained SVG force layout (no dependencies).
+- `Graph explorer - Sigma.html` — same UX rendered via Sigma.js (WebGL) + ForceAtlas2, loading
+  `assets/graph-explorer.bundle.js` (built from `tools/graph-explorer/`).
 
 **Docs (read these before designing a screen).**
 - `docs/orchestration-agent-spec.md` — full technical spec: domain graph schema (Site/Asset/
   Component/FailureMode/MaintenanceTask/WorkOrder/Sensor…), lineage record shape, determinism model.
 - `docs/ui-design-brief.md` — the master brief, **shared example data** (use it verbatim — see
-  below), and per-screen hi-fi prompts (§3.1–3.6) listing required must-show elements and states.
+  below), and per-screen hi-fi prompts listing required must-show elements and states.
 
 **Shared example data.** Every screen uses the *same* scenario for consistency — request "Which
 pumps at the North plant are overdue for lubrication?", intent `assets_overdue_for_task` (conf 0.92),
@@ -83,9 +87,9 @@ ipsum** — reuse this data.
 
 ## Conventions
 
-- Each hi-fi screen is a **single self-contained HTML+CSS artifact** and ends with a 2–3 line
-  rationale mapping its elements to spec sections.
+- Each screen is a **single self-contained HTML artifact** that links `assets/console-system.css`.
 - Always render the **states** the brief calls for (empty / matched / executing / complete /
   clarification / error) — that's where this product's UX lives.
-- Monospace (`--font-mono`, JetBrains Mono) for IDs, Cypher, and parameters; Inter for UI.
-- `screenshots/` is gitignored (design-iteration verification artifacts, not deliverables).
+- Monospace (`--font-mono`, Roboto Mono) for IDs, Cypher, and parameters; Roboto for UI.
+- `screenshots/` is gitignored (design-iteration verification artifacts, not deliverables); so is
+  `node_modules/` under `tools/`.

@@ -2,7 +2,7 @@
   "name": "graph-explorer-build",
   "private": true,
   "version": "1.0.0",
-  "description": "Bundles graphology + Sigma.js + ForceAtlas2 into assets/graph-explorer.bundle.js for 'Graph explorer - Sigma (Linkurious).html'. The bundle is committed so the artifact opens with no build; rebuild with `npm install && npm run build`.",
+  "description": "Bundles graphology + Sigma.js + ForceAtlas2 into assets/graph-explorer.bundle.js for 'Graph explorer - Sigma.html'. The bundle is committed so the artifact opens with no build; rebuild with `npm install && npm run build`.",
   "scripts": {
     "build": "esbuild explorer.src.js --bundle --minify --format=iife --legal-comments=none --outfile=../../assets/graph-explorer.bundle.js"
   },

@@ -13,7 +13,8 @@ tool call that produced it.
 > matched intent + confidence, extracted parameters, the steps that ran, and
 > lineage on every output.
 
-These are **HTML design artifacts** (open in a browser). No build step.
+These are **HTML design artifacts** (open in a browser). No backend, no
+database — all data is illustrative and baked into the screens.
 
 ---
 
@@ -21,92 +22,101 @@ These are **HTML design artifacts** (open in a browser). No build step.
 
 | Screen | State |
 |---|---|
-| Screen map + lo-fi wireframes (all 7) | ✅ done |
-| Console / Ask | ✅ hi-fi locked & verified |
-| Results + lineage | ✅ hi-fi locked & verified |
-| Trace / audit | ✅ hi-fi locked & verified |
-| Clarification / disambiguation | ✅ hi-fi locked & verified |
-| Intent catalogue | ✅ hi-fi locked & verified |
-| Tool registry | ✅ hi-fi locked & verified |
-| Graph schema browser | ✅ hi-fi (overview / node / relationship states) |
-| Write-action approval gate | ✅ hi-fi (in-flow modal on Console / Ask) |
+| Console / Ask (+ in-flow write-approval gate) | ✅ hi-fi |
+| Results + lineage | ✅ hi-fi |
+| Trace / audit | ✅ hi-fi |
+| Clarification / disambiguation | ✅ hi-fi |
+| Intent catalogue | ✅ hi-fi |
+| Tool registry | ✅ hi-fi |
+| Graph schema browser | ✅ hi-fi |
+| Graph explorer (instance data) | ✅ hi-fi — SVG (no-dep) + Sigma.js/WebGL |
 
-All **seven screens** plus the **write-approval gate** are built on one locked
-design system (`assets/console-system.css`), sharing the master-detail pattern.
-The write gate lives inside the Ask flow (Write-action scenario) per the
-"state/modal, not a standalone screen" decision.
+All screens are built on one shared design system (`assets/console-system.css`)
+and share the master-detail pattern. The write-approval gate lives inside the
+Ask flow (Write-action scenario), not as a standalone screen.
 
 ---
 
 ## What's here
 
 ```
-Console - Ask.html              ⭐ hi-fi, locked — the reference screen
-Results - Lineage.html          hi-fi — results table + lineage drawer (evidence face 1)
-Trace - Audit.html              hi-fi — audit timeline + step inspector (evidence face 2)
-Clarification.html              hi-fi — candidate intents + parameter completion
-Intent catalogue.html           hi-fi — registered capabilities, read + write detail
-Tool registry.html              hi-fi — tool manifests, health + observability
-Graph schema.html               hi-fi — graph model: labels, relationships, governance
-Console Explorations.html       3 layout directions on a compare canvas (A/B/C)
-wireframes/
-  Orchestration Console - Wireframes.html   grayscale lo-fi, all 7 screens + screen map
+index.html                      landing page linking every screen
+Console - Ask.html              ⭐ the reference screen (request → intent → plan)
+Results - Lineage.html          results table + lineage drawer (evidence face 1)
+Trace - Audit.html              audit timeline + step inspector (evidence face 2)
+Clarification.html              candidate intents + parameter completion
+Intent catalogue.html           registered capabilities, read + write detail
+Tool registry.html              tool manifests, health + observability
+Graph schema.html               graph model: labels, relationships, governance
+Graph explorer.html             live instance graph — self-contained SVG force layout
+Graph explorer - Sigma.html     same, rendered via Sigma.js (WebGL) + ForceAtlas2
 
 assets/
-  console-system.css            ⭐ locked design system (tokens + components)
-  colors_and_type.css           Totally Wild AI base tokens (upstream)
+  console-system.css            ⭐ the design system (tokens + oc-* components)
+  graph-explorer.bundle.js      bundled graph engine (graphology + Sigma.js + ForceAtlas2)
   tw-stamp-light.svg            brand mark
 
-consoles/                       variation source for Console Explorations.html
-  variation-a.js                A · vertical flow
-  variation-b.js                B · split workspace
-  variation-c.js                C · pipeline console
-design-canvas.jsx               compare-canvas scaffold
-
+tools/graph-explorer/           esbuild source for graph-explorer.bundle.js
 docs/
   orchestration-agent-spec.md   technical spec
   ui-design-brief.md            UI brief + per-screen prompts + example data
+
+Dockerfile / docker-compose.yml static-server image (nginx) for a quick preview
 ```
 
 ## Viewing
 
-Open any `.html` file directly in a browser, or serve the folder:
+Open `index.html` directly in a browser, or serve the folder:
 
 ```bash
-python3 -m http.server 8000
-# then open http://localhost:8000/Console%20-%20Ask.html
+python3 -m http.server 8000        # then open http://localhost:8000/
+```
+
+Or run the container:
+
+```bash
+docker compose up --build          # then open http://localhost:8080/
 ```
 
 In **Console - Ask.html**, click `Confirm & run plan` to watch the step tracker
 execute, expand any step for its bound Cypher / node IDs / tool I/O, and use the
-`High confidence / Ambiguous` toggle to see the "clarify, don't guess" path.
+`High confidence / Ambiguous / Write action` toggle to see the "clarify, don't
+guess" path and the write-approval gate. In the **Graph explorer**, click a node
+to expand its neighbours or "Expand full graph" to see the force layout.
+
+> Fonts and icons load from CDNs (Google Fonts, Phosphor), so a running
+> container needs network to render them. The graph engine is bundled locally.
 
 ---
 
-## Design system (locked)
+## Design system
 
-Built on the **Totally Wild AI** design system, clean mode (6px radii).
+A modern, calm enterprise aesthetic — white surfaces, a dark rail, a single
+bright-blue accent.
 
-- **Base:** cream paper / deep ink, subtle paper texture.
-- **Accent:** cyan — interactive, links, the confidence meter.
-- **Status encoding:** green = read (calm) · amber = write (side-effect) ·
-  marker-red = error.
-- **Type:** Inter (UI), JetBrains Mono (IDs / Cypher / params), Caveat (brand
-  mark only).
+- **Base:** white / light-grey surfaces, near-black ink, light hairlines, soft
+  shadows. The left rail is dark.
+- **Accent:** bright blue — interactive elements, links, the confidence meter.
+- **Status encoding (hard rule):** green = read (calm) · amber = write
+  (side-effect, needs confirmation) · red = error · blue = accent.
+- **Type:** Space Grotesk (display/headings), Roboto (UI), Roboto Mono (IDs /
+  Cypher / parameters).
 
 **Structural pattern — master-detail.** Work/list on the left, **evidence on the
 right** (carrying real visual weight, not a sidebar). It generalizes across every
 screen: Results → lineage drawer, Trace → step inspector, Catalogue → template
 detail, Registry → manifest detail. Collapses to a single column below 1080px.
 
-**Components:** status pills (read/write/error), the right-pane evidence panel,
-the monospace code/param block, editable parameter chips + confidence meter, and
-the vertical step-tracker (collapsed + inline-expanded states).
+**Components (`oc-*`):** status pills (read/write/error), the right-pane evidence
+panel, the monospace code/param block, editable parameter chips + confidence
+meter, the vertical step-tracker (collapsed + inline-expanded), and the
+write-approval modal.
 
 ---
 
 ## Note on fonts/icons
 
-Fonts (Inter, JetBrains Mono, Caveat) load from Google Fonts; icons from the
-Phosphor CDN. No licensed files are vendored. See the Totally Wild AI design
-system for substitution guidance.
+Fonts (Space Grotesk, Roboto, Roboto Mono) load from Google Fonts; icons from the
+Phosphor CDN. No licensed files are vendored. The graph engine (graphology +
+Sigma.js + ForceAtlas2) is bundled into `assets/graph-explorer.bundle.js`;
+rebuild it with `npm install && npm run build` in `tools/graph-explorer/`.
