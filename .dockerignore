@@ -1,0 +1,10 @@
+.git
+.gitignore
+**/node_modules
+tools
+design-reference
+screenshots
+.thumbnail
+Dockerfile
+.dockerignore
+docker-compose.yml

@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Orchestration Console — Intent catalogue</title>
-<link rel="stylesheet" href="assets/colors_and_type.css">
 <link rel="stylesheet" href="assets/console-system.css">
 <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
 <style>
@@ -13,13 +12,12 @@
 
   /* search + filter bar */
   .searchbar{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
-  .search{ display:flex; align-items:center; gap:9px; border:1.5px solid var(--ink); border-radius: var(--r-sm); padding:8px 12px; background: var(--card); flex:1; min-width:220px; box-shadow: var(--shadow-press); }
+  .search{ display:flex; align-items:center; gap:9px; border:1px solid var(--ink-line); border-radius: var(--r-sm); padding:8px 12px; background: var(--card); flex:1; min-width:220px; box-shadow: var(--shadow-press); }
   .search input{ border:none; outline:none; background:transparent; font:inherit; font-size:13px; color: var(--ink); flex:1; }
   .search i{ color: var(--ink-faint); }
-  .filt{ display:inline-flex; border:1.5px solid var(--ink); border-radius: var(--r-sm); overflow:hidden; flex:none; }
-  .filt button{ font-family: var(--font-mono); font-size:11px; letter-spacing:.04em; text-transform:uppercase; padding:8px 12px; border:none; background: var(--card); color: var(--ink-soft); cursor:pointer; }
-  .filt button+button{ border-left:1.5px solid var(--ink); }
-  .filt button.on{ background: var(--ink); color: var(--card); }
+  .filt{ display:inline-flex; background: var(--card-sunk); border:none; border-radius:999px; padding:3px; flex:none; }
+  .filt button{ font-family: var(--font-mono); font-size:11px; letter-spacing:.04em; text-transform:uppercase; padding:8px 13px; border:none; border-radius:999px; background:none; color: var(--ink-soft); cursor:pointer; }
+  .filt button.on{ background: var(--ink); color:#fff; }
 
   /* intent list rows */
   .intent-row{ width:100%; text-align:left; border:1.5px solid var(--ink-line); border-radius: var(--r-md); background: var(--card); padding:14px 16px; cursor:pointer; display:flex; flex-direction:column; gap:7px; transition: background var(--dur-fast) var(--ease); }
@@ -73,6 +71,7 @@
       <div class="oc-nav on"><i class="ph ph-list-checks"></i> Intent catalogue</div>
       <a class="oc-nav" href="Tool registry.html" style="text-decoration:none;"><i class="ph ph-plugs"></i> Tool registry</a>
       <a class="oc-nav" href="Graph schema.html" style="text-decoration:none;"><i class="ph ph-graph"></i> Graph schema</a>
+      <a class="oc-nav" href="Graph explorer - Sigma.html" style="text-decoration:none;"><i class="ph ph-share-network"></i> Graph explorer</a>
       <div class="oc-rail-foot">Reviewed, version-controlled capabilities. This list is the whole surface — nothing runs that isn't here.</div>
     </aside>
 

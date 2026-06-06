@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Orchestration Console — Graph explorer (Sigma.js)</title>
+<link rel="stylesheet" href="assets/console-system.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<!-- graph stack bundled locally (graphology + Sigma.js WebGL + real ForceAtlas2);
+     built from tools/graph-explorer via esbuild → assets/graph-explorer.bundle.js (loaded at end of body) -->
+<style>
+  html,body{ height:100%; } body{ margin:0; }
+  .gx-tools{ display:flex; align-items:center; gap:10px; padding:12px 20px; background:#fff; border-bottom:1px solid var(--ink-line); }
+  .gx-iconbtn{ width:34px; height:34px; border-radius:9px; border:1px solid var(--ink-line); background:#fff; display:grid; place-items:center; color:var(--ink-soft); cursor:pointer; font-size:16px; transition:all .18s var(--ease); }
+  .gx-iconbtn:hover{ border-color:var(--ink-faint); color:var(--ink); }
+  .gx-search{ flex:1; max-width:440px; display:flex; align-items:center; gap:9px; background:var(--paper); border:1px solid var(--ink-line); border-radius:999px; padding:8px 16px; color:var(--ink-faint); }
+  .gx-search input{ border:none; outline:none; background:none; font-family:var(--font-body); font-size:13.5px; color:var(--ink); flex:1; }
+
+  .gx-stage{ position:relative; flex:1; min-height:0; background:
+      radial-gradient(circle at 1px 1px, rgba(10,11,13,.05) 1px, transparent 0) 0 0/22px 22px, #fbfbfc; overflow:hidden; }
+  #gx-sigma{ position:absolute; inset:0; }
+
+  .gx-detail{ position:absolute; top:18px; left:18px; width:288px; max-height:calc(100% - 36px); overflow:auto; background:#fff; border:1px solid var(--ink-line); border-radius:14px; box-shadow:var(--shadow-lift); display:none; z-index:5; }
+  .gx-detail.open{ display:block; }
+  .gx-d-top{ padding:16px 18px; border-bottom:1px solid var(--ink-line); display:flex; gap:12px; align-items:flex-start; }
+  .gx-d-ic{ width:38px; height:38px; border-radius:10px; display:grid; place-items:center; color:#fff; font-size:19px; flex:none; }
+  .gx-d-kind{ font-family:var(--font-mono); font-size:9.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-faint); }
+  .gx-d-name{ font-family:var(--font-mono); font-size:15px; font-weight:500; color:var(--ink); margin-top:3px; word-break:break-word; }
+  .gx-d-body{ padding:14px 18px; display:flex; flex-direction:column; gap:14px; }
+  .gx-d-x{ margin-left:auto; cursor:pointer; color:var(--ink-faint); font-size:18px; background:none; border:none; }
+  .gx-props{ display:grid; grid-template-columns:auto 1fr; gap:6px 12px; font-family:var(--font-mono); font-size:11.5px; }
+  .gx-props .k{ color:var(--ink-faint); } .gx-props .v{ color:var(--ink); }
+
+  .gx-zoom{ position:absolute; right:18px; bottom:18px; display:flex; gap:6px; background:#fff; border:1px solid var(--ink-line); border-radius:999px; padding:5px; box-shadow:var(--shadow-rest); z-index:5; }
+  .gx-zoom button{ width:32px; height:32px; border:none; background:none; border-radius:50%; cursor:pointer; color:var(--ink-soft); font-size:15px; display:grid; place-items:center; }
+  .gx-zoom button:hover{ background:var(--paper); color:var(--ink); }
+  .gx-status{ position:absolute; left:18px; bottom:18px; z-index:5; }
+  .gx-chip{ display:inline-flex; align-items:center; gap:7px; background:#fff; border:1px solid var(--ink-line); border-radius:999px; padding:6px 13px; font-size:11.5px; color:var(--ink-soft); box-shadow:var(--shadow-rest); }
+  .gx-chip .dot{ width:7px; height:7px; border-radius:50%; background:var(--accent-green); }
+  .gx-legend{ position:absolute; right:18px; top:18px; background:#fff; border:1px solid var(--ink-line); border-radius:12px; box-shadow:var(--shadow-rest); padding:11px 13px; display:flex; flex-direction:column; gap:7px; z-index:5; }
+  .gx-legend .lk{ display:flex; align-items:center; gap:8px; font-size:11px; color:var(--ink-soft); }
+  .gx-legend .sw{ width:11px; height:11px; border-radius:50%; }
+  .gx-err{ position:absolute; inset:0; display:none; place-items:center; text-align:center; z-index:9; }
+  .gx-err.show{ display:grid; }
+  .gx-engine{ display:inline-flex; align-items:center; gap:7px; font-family:var(--font-mono); font-size:10px; color:var(--ink-faint); }
+</style>
+</head>
+<body>
+<div class="oc">
+  <div class="oc-app">
+    <aside class="oc-rail">
+      <div class="oc-brand"><img src="assets/tw-stamp-light.svg" alt=""><div class="wm">Console<small>orchestration</small></div></div>
+      <div class="oc-navgrp">Workspace</div>
+      <a class="oc-nav" href="Console - Ask.html" style="text-decoration:none;"><i class="ph ph-terminal-window"></i> Ask</a>
+      <a class="oc-nav" href="Results - Lineage.html" style="text-decoration:none;"><i class="ph ph-table"></i> Results</a>
+      <a class="oc-nav" href="Trace - Audit.html" style="text-decoration:none;"><i class="ph ph-tree-structure"></i> Trace</a>
+      <div class="oc-navgrp">Reference</div>
+      <a class="oc-nav" href="Intent catalogue.html" style="text-decoration:none;"><i class="ph ph-list-checks"></i> Intent catalogue</a>
+      <a class="oc-nav" href="Tool registry.html" style="text-decoration:none;"><i class="ph ph-plugs"></i> Tool registry</a>
+      <a class="oc-nav" href="Graph schema.html" style="text-decoration:none;"><i class="ph ph-graph"></i> Graph schema</a>
+      <div class="oc-nav on"><i class="ph ph-share-network"></i> Graph explorer</div>
+      <div class="oc-rail-foot">WebGL render via Sigma.js + ForceAtlas2. Read-only — every node carries source &amp; ID.</div>
+    </aside>
+
+    <div class="oc-main">
+      <div class="oc-top">
+        <span class="crumb">Workspace / <b>Graph explorer</b></span>
+        <span class="gx-engine"><i class="ph ph-lightning"></i> sigma.js · forceatlas2 · webgl</span>
+        <span class="oc-spacer"></span>
+        <a class="oc-link" href="Graph explorer.html"><i class="ph ph-arrow-u-up-left"></i> no-dependency version</a>
+        <span class="oc-pill read"><span class="dot"></span>read-only</span>
+      </div>
+
+      <div class="gx-tools">
+        <span class="gx-iconbtn" title="Reset view" onclick="seed()"><i class="ph ph-arrow-counter-clockwise"></i></span>
+        <span class="gx-search"><i class="ph ph-magnifying-glass"></i><input placeholder="Search nodes — SITE-NORTH, P-101, LUBE-01…" id="gxq" oninput="searchNodes(this.value)"></span>
+        <span class="oc-spacer"></span>
+        <span class="oc-btn sm" onclick="expandAll()"><i class="ph ph-graph"></i> Expand full graph</span>
+        <span class="gx-iconbtn" title="Fit to view" onclick="fit()"><i class="ph ph-crop"></i></span>
+      </div>
+
+      <div class="gx-stage">
+        <div id="gx-sigma"></div>
+        <div class="gx-legend" id="gxLegend"></div>
+        <div class="gx-detail" id="gxDetail">
+          <div class="gx-d-top">
+            <span class="gx-d-ic" id="gxdIc"></span>
+            <div style="min-width:0;"><div class="gx-d-kind" id="gxdKind">Asset</div><div class="gx-d-name" id="gxdName">P-101</div></div>
+            <button class="gx-d-x" onclick="closeDetail()"><i class="ph ph-x"></i></button>
+          </div>
+          <div class="gx-d-body">
+            <div><div class="oc-detail-label" style="margin-bottom:7px;">Properties</div><div class="gx-props" id="gxdProps"></div></div>
+            <div><div class="oc-detail-label" style="margin-bottom:7px;">Provenance</div><div class="oc-code" id="gxdProv" style="font-size:10.5px;"></div></div>
+            <button class="oc-btn primary sm" id="gxdExpand" style="justify-content:center;" onclick="expandSelected()"><i class="ph ph-graph"></i> Expand neighbours</button>
+          </div>
+        </div>
+        <div class="gx-status"><span class="gx-chip"><span class="dot"></span><span id="gxCount">…</span></span></div>
+        <div class="gx-zoom"><button onclick="zoomBy('out')"><i class="ph ph-minus"></i></button><button onclick="zoomBy('in')"><i class="ph ph-plus"></i></button><button onclick="fit()" title="Fit"><i class="ph ph-crosshair"></i></button></div>
+        <div class="gx-err" id="gxErr"><div class="oc-empty"><div class="glyph"><i class="ph ph-wifi-slash"></i></div><div class="ttl">Graph libraries didn’t load</div><div class="oc-sub">The bundled graph engine (assets/graph-explorer.bundle.js) failed to load. Rebuild it with <code>npm install &amp;&amp; npm run build</code> in tools/graph-explorer, or use the <a href="Graph explorer.html">no-dependency version</a>.</div></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="assets/graph-explorer.bundle.js"></script>
+</body>
+</html>

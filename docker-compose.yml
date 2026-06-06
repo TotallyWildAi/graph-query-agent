@@ -1,0 +1,7 @@
+# Quick local preview:  docker compose up --build   →   http://localhost:8080
+services:
+  console:
+    build: .
+    image: orchestration-console-design
+    ports:
+      - "8080:80"

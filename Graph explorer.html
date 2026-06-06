@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Orchestration Console — Graph explorer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="assets/console-system.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
+<style>
+  html,body{ height:100%; } body{ margin:0; }
+
+  /* toolbar row (graph-workspace canvas chrome) */
+  .gx-tools{ display:flex; align-items:center; gap:10px; padding:12px 20px; background:#fff; border-bottom:1px solid var(--ink-line); }
+  .gx-iconbtn{ width:34px; height:34px; border-radius:9px; border:1px solid var(--ink-line); background:#fff; display:grid; place-items:center; color:var(--ink-soft); cursor:pointer; font-size:16px; transition:all .18s var(--ease); }
+  .gx-iconbtn:hover{ border-color:var(--ink-faint); color:var(--ink); }
+  .gx-search{ flex:1; max-width:460px; display:flex; align-items:center; gap:9px; background:var(--paper); border:1px solid var(--ink-line); border-radius:999px; padding:8px 16px; color:var(--ink-faint); }
+  .gx-search input{ border:none; outline:none; background:none; font-family:var(--font-body); font-size:13.5px; color:var(--ink); flex:1; }
+
+  /* stage */
+  .gx-stage{ position:relative; flex:1; min-height:0; background:
+      radial-gradient(circle at 1px 1px, rgba(10,11,13,.05) 1px, transparent 0) 0 0/22px 22px,
+      #fbfbfc; overflow:hidden; }
+  #gx-svg{ width:100%; height:100%; display:block; cursor:grab; }
+  #gx-svg.panning{ cursor:grabbing; }
+
+  .gx-edge{ stroke:#C9CDD3; stroke-width:1.2; }
+  .gx-edge.hot{ stroke:var(--accent-cyan); stroke-width:2; }
+  .gx-elabel{ font-family:var(--font-mono); font-size:8.5px; fill:var(--ink-faint); paint-order:stroke; stroke:#fbfbfc; stroke-width:3px; opacity:0; transition:opacity .15s; }
+  .gx-node{ cursor:pointer; }
+  .gx-node circle.body{ stroke:#fff; stroke-width:2.5; transition:filter .15s; }
+  .gx-node.sel circle.body{ stroke:var(--ink); stroke-width:3; }
+  .gx-node.dim{ opacity:.25; }
+  .gx-node .ico{ font-size:14px; fill:#fff; }
+  .gx-label{ font-family:var(--font-body); font-size:10.5px; font-weight:500; fill:var(--ink); paint-order:stroke; stroke:#fbfbfc; stroke-width:3.5px; text-anchor:middle; opacity:0; transition:opacity .15s; }
+  /* legibility: only label hubs / hovered / selected; reveal everything when zoomed in */
+  .gx-node.hub .gx-label, .gx-node.hover .gx-label, .gx-node.sel .gx-label{ opacity:1; }
+  #gx-svg.zoomed .gx-label, #gx-svg.zoomed .gx-elabel{ opacity:1; }
+  .gx-badge circle{ fill:var(--ink); } .gx-badge text{ fill:#fff; font-family:var(--font-mono); font-size:8px; text-anchor:middle; }
+
+  /* floating detail panel */
+  .gx-detail{ position:absolute; top:18px; left:18px; width:288px; max-height:calc(100% - 36px); overflow:auto; background:#fff; border:1px solid var(--ink-line); border-radius:14px; box-shadow:var(--shadow-lift); display:none; }
+  .gx-detail.open{ display:block; }
+  .gx-d-top{ padding:16px 18px; border-bottom:1px solid var(--ink-line); display:flex; gap:12px; align-items:flex-start; }
+  .gx-d-ic{ width:38px; height:38px; border-radius:10px; display:grid; place-items:center; color:#fff; font-size:19px; flex:none; }
+  .gx-d-kind{ font-family:var(--font-mono); font-size:9.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-faint); }
+  .gx-d-name{ font-family:var(--font-mono); font-size:15px; font-weight:500; color:var(--ink); margin-top:3px; word-break:break-word; }
+  .gx-d-body{ padding:14px 18px; display:flex; flex-direction:column; gap:14px; }
+  .gx-d-x{ margin-left:auto; cursor:pointer; color:var(--ink-faint); font-size:18px; background:none; border:none; }
+  .gx-d-x:hover{ color:var(--ink); }
+  .gx-props{ display:grid; grid-template-columns:auto 1fr; gap:6px 12px; font-family:var(--font-mono); font-size:11.5px; }
+  .gx-props .k{ color:var(--ink-faint); } .gx-props .v{ color:var(--ink); }
+
+  /* zoom + status chrome */
+  .gx-zoom{ position:absolute; right:18px; bottom:18px; display:flex; gap:6px; background:#fff; border:1px solid var(--ink-line); border-radius:999px; padding:5px; box-shadow:var(--shadow-rest); }
+  .gx-zoom button{ width:32px; height:32px; border:none; background:none; border-radius:50%; cursor:pointer; color:var(--ink-soft); font-size:15px; display:grid; place-items:center; }
+  .gx-zoom button:hover{ background:var(--paper); color:var(--ink); }
+  .gx-status{ position:absolute; left:18px; bottom:18px; display:flex; align-items:center; gap:8px; }
+  .gx-chip{ display:inline-flex; align-items:center; gap:7px; background:#fff; border:1px solid var(--ink-line); border-radius:999px; padding:6px 13px; font-size:11.5px; color:var(--ink-soft); box-shadow:var(--shadow-rest); }
+  .gx-chip .dot{ width:7px; height:7px; border-radius:50%; background:var(--accent-green); }
+  .gx-legend{ position:absolute; right:18px; top:18px; background:#fff; border:1px solid var(--ink-line); border-radius:12px; box-shadow:var(--shadow-rest); padding:11px 13px; display:flex; flex-direction:column; gap:7px; }
+  .gx-legend .lk{ display:flex; align-items:center; gap:8px; font-size:11px; color:var(--ink-soft); }
+  .gx-legend .sw{ width:11px; height:11px; border-radius:50%; }
+</style>
+</head>
+<body>
+<div class="oc">
+  <div class="oc-app">
+
+    <!-- rail (shared design system) -->
+    <aside class="oc-rail">
+      <div class="oc-brand"><img src="assets/tw-stamp-light.svg" alt=""><div class="wm">Console<small>orchestration</small></div></div>
+      <div class="oc-navgrp">Workspace</div>
+      <a class="oc-nav" href="Console - Ask.html" style="text-decoration:none;"><i class="ph ph-terminal-window"></i> Ask</a>
+      <a class="oc-nav" href="Results - Lineage.html" style="text-decoration:none;"><i class="ph ph-table"></i> Results</a>
+      <a class="oc-nav" href="Trace - Audit.html" style="text-decoration:none;"><i class="ph ph-tree-structure"></i> Trace</a>
+      <div class="oc-navgrp">Reference</div>
+      <a class="oc-nav" href="Intent catalogue.html" style="text-decoration:none;"><i class="ph ph-list-checks"></i> Intent catalogue</a>
+      <a class="oc-nav" href="Tool registry.html" style="text-decoration:none;"><i class="ph ph-plugs"></i> Tool registry</a>
+      <a class="oc-nav" href="Graph schema.html" style="text-decoration:none;"><i class="ph ph-graph"></i> Graph schema</a>
+      <div class="oc-nav on"><i class="ph ph-share-network"></i> Graph explorer</div>
+      <div class="oc-rail-foot">Instance data from the knowledge graph. Read-only — every node carries its source &amp; ID.</div>
+    </aside>
+
+    <div class="oc-main">
+      <div class="oc-top">
+        <span class="crumb">Workspace / <b>Graph explorer</b></span>
+        <span class="oc-spacer"></span>
+        <a class="oc-link" href="Graph explorer - Sigma.html"><i class="ph ph-lightning"></i> High-fidelity (Sigma.js)</a>
+        <span class="oc-meta">graph_version <b>2026-06-04T09:00Z</b></span>
+        <span class="oc-pill read"><span class="dot"></span>read-only</span>
+      </div>
+
+      <!-- canvas toolbar -->
+      <div class="gx-tools">
+        <span class="gx-iconbtn" title="Reset view" onclick="seed()"><i class="ph ph-arrow-counter-clockwise"></i></span>
+        <span class="gx-search"><i class="ph ph-magnifying-glass"></i><input placeholder="Search nodes — SITE-NORTH, P-101, LUBE-01…" id="gxq" oninput="searchNodes(this.value)"></span>
+        <span class="oc-spacer"></span>
+        <span class="oc-btn sm" onclick="expandAll()"><i class="ph ph-graph"></i> Expand full graph</span>
+        <span class="gx-iconbtn" title="Fit to view" onclick="fit()"><i class="ph ph-crop"></i></span>
+      </div>
+
+      <!-- stage -->
+      <div class="gx-stage">
+        <svg id="gx-svg" xmlns="http://www.w3.org/2000/svg">
+          <g id="gx-view">
+            <g id="gx-edges"></g><g id="gx-elabels"></g><g id="gx-nodes"></g>
+          </g>
+        </svg>
+
+        <div class="gx-legend" id="gxLegend"></div>
+
+        <div class="gx-detail" id="gxDetail">
+          <div class="gx-d-top">
+            <span class="gx-d-ic" id="gxdIc"><i class="ph ph-cube"></i></span>
+            <div style="min-width:0;"><div class="gx-d-kind" id="gxdKind">Asset</div><div class="gx-d-name" id="gxdName">P-101</div></div>
+            <button class="gx-d-x" onclick="closeDetail()"><i class="ph ph-x"></i></button>
+          </div>
+          <div class="gx-d-body">
+            <div><div class="oc-detail-label" style="margin-bottom:7px;">Properties</div><div class="gx-props" id="gxdProps"></div></div>
+            <div><div class="oc-detail-label" style="margin-bottom:7px;">Provenance</div>
+              <div class="oc-code" id="gxdProv" style="font-size:10.5px;"></div></div>
+            <button class="oc-btn primary sm" id="gxdExpand" style="justify-content:center;" onclick="expandSelected()"><i class="ph ph-graph"></i> Expand neighbours</button>
+          </div>
+        </div>
+
+        <div class="gx-status"><span class="gx-chip"><span class="dot"></span><span id="gxCount">1 node</span> · live layout</span></div>
+        <div class="gx-zoom"><button onclick="zoomBy(0.8)"><i class="ph ph-minus"></i></button><button onclick="zoomBy(1.25)"><i class="ph ph-plus"></i></button><button onclick="fit()" title="Fit"><i class="ph ph-crosshair"></i></button></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ====================== DOMAIN GRAPH (maintenance KG, spec §11) ====================== */
+const TYPE = {
+  Site:        { color:'#0A0B0D', icon:'ph-buildings',     r:22 },
+  Asset:       { color:'#1499FF', icon:'ph-gear-six',      r:18 },
+  AssetClass:  { color:'#8D8D8D', icon:'ph-tag',           r:13 },
+  Component:   { color:'#46B3FF', icon:'ph-puzzle-piece',  r:13 },
+  FailureMode: { color:'#E5484D', icon:'ph-warning',       r:13 },
+  MaintenanceTask:{ color:'#19A05F', icon:'ph-wrench',     r:14 },
+  WorkOrder:   { color:'#E8973A', icon:'ph-clipboard-text',r:15 },
+  Sensor:      { color:'#7B6BE0', icon:'ph-broadcast',     r:12 },
+  Reading:     { color:'#B9BFC8', icon:'ph-pulse',         r:8  },
+  Technician:  { color:'#475569', icon:'ph-user',          r:13 },
+};
+const PROPS = {
+  Site:{region:'Northern',area:'Plant'}, Asset:{status:'OPERATING'}, AssetClass:{},
+  Component:{}, FailureMode:{severity:'7 / 10'}, MaintenanceTask:{interval_days:'90'},
+  WorkOrder:{status:'OPEN'}, Sensor:{type:'vibration'}, Reading:{}, Technician:{shift:'day'}
+};
+
+/* full dataset — N (nodes) and L (links). Visible subset grows on expand. */
+const N = {}, L = [];
+function add(id,type,label,extra={}){ if(!N[id]) N[id]={id,type,label,short:id,extra,...spawnPos()}; return N[id]; }
+function link(a,b,rel){ L.push({s:a,t:b,rel}); }
+function spawnPos(){ const a=Math.random()*6.28, d=40+Math.random()*40; return {x:innerWidth/2+Math.cos(a)*d, y:innerHeight/2+Math.sin(a)*d, vx:0, vy:0}; }
+
+// site + asset classes
+add('SITE-NORTH','Site','North Plant');
+add('CC-CENTRIF','AssetClass','Centrifugal Pump'); add('CC-BOOST','AssetClass','Booster Pump');
+const PUMPS = [['P-101','CC-CENTRIF'],['P-104','CC-CENTRIF'],['P-110','CC-BOOST'],
+  ['P-118','CC-CENTRIF'],['P-122','CC-BOOST'],['P-130','CC-CENTRIF'],['P-141','CC-BOOST'],
+  ['P-150','CC-CENTRIF'],['P-163','CC-CENTRIF'],['P-177','CC-BOOST'],['P-188','CC-CENTRIF'],['P-195','CC-BOOST']];
+const TASKS = ['LUBE-01','ALIGN-02','VIB-03']; TASKS.forEach(t=>add(t,'MaintenanceTask',t));
+const FMS = ['Bearing wear','Seal leak','Misalignment']; FMS.forEach((f,i)=>add('FM-'+i,'FailureMode',f));
+add('TECH-AR','Technician','A. Rivera'); add('TECH-JL','Technician','J. Lind');
+
+PUMPS.forEach(([p,cls],pi)=>{
+  add(p,'Asset','Pump '+p); link('SITE-NORTH',p,'CONTAINS'); link(p,cls,'OF_TYPE');
+  ['Bearing','Seal','Impeller'].forEach((c,ci)=>{
+    const cid=p+'-'+c.slice(0,3).toUpperCase(); add(cid,'Component',c); link(p,cid,'HAS_COMPONENT');
+    const fm='FM-'+((ci)%FMS.length); link(cid,fm,'SUBJECT_TO');
+    const sid=p+'-S'+ci; add(sid,'Sensor',c+' sensor'); link(sid,cid,'MONITORS');
+    const rid=p+'-R'+ci; add(rid,'Reading','reading'); link(sid,rid,'EMITS');
+  });
+  FMS.forEach((_,fi)=> link('FM-'+fi,TASKS[fi%TASKS.length],'MITIGATED_BY'));
+  if(pi<6){ const wo='WO-'+(20480+pi); add(wo,'WorkOrder',wo); link(wo,p,'TARGETS'); link(wo,TASKS[pi%TASKS.length],'EXECUTES');
+    link(pi%2?'TECH-JL':'TECH-AR',wo,'ASSIGNED_TO'); }
+});
+
+/* visible set */
+let vis = new Set(), sel = null;
+const adj = id => L.filter(l=>l.s===id||l.t===id).map(l=> l.s===id?l.t:l.s);
+function degHidden(id){ return adj(id).filter(n=>!vis.has(n)).length; }
+
+/* ====================== RENDER ====================== */
+const svg=document.getElementById('gx-svg'), gView=document.getElementById('gx-view');
+const gE=document.getElementById('gx-edges'), gEL=document.getElementById('gx-elabels'), gN=document.getElementById('gx-nodes');
+let view={k:1,tx:0,ty:0};
+const LABEL_MIN_DEGREE=6;  /* only hub nodes carry a persistent label */
+function applyView(){ gView.setAttribute('transform',`translate(${view.tx},${view.ty}) scale(${view.k})`); svg.classList.toggle('zoomed', view.k>1.5); }
+
+function render(){
+  // edges
+  const links = L.filter(l=>vis.has(l.s)&&vis.has(l.t));
+  gE.innerHTML = links.map((l,i)=>`<line class="gx-edge" data-i="${i}" />`).join('');
+  gEL.innerHTML = links.map((l,i)=>`<text class="gx-elabel" data-i="${i}">${l.rel}</text>`).join('');
+  // nodes
+  gN.innerHTML='';
+  [...vis].forEach(id=>{
+    const n=N[id], t=TYPE[n.type]; const hidden=degHidden(id);
+    const g=document.createElementNS('http://www.w3.org/2000/svg','g');
+    g.setAttribute('class','gx-node'+(sel===id?' sel':'')+(adj(id).length>=LABEL_MIN_DEGREE?' hub':'')); g.dataset.id=id;
+    g.innerHTML=`<circle class="body" r="${t.r}" fill="${t.color}"></circle>
+      <foreignObject x="${-t.r}" y="${-t.r}" width="${t.r*2}" height="${t.r*2}" style="pointer-events:none">
+        <div xmlns="http://www.w3.org/1999/xhtml" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:${Math.round(t.r*0.85)}px">
+          <i class="ph-fill ${t.icon}"></i></div></foreignObject>
+      ${n.type!=='Reading'?`<text class="gx-label" y="${t.r+13}">${n.label}</text>`:''}
+      ${hidden>0?`<g class="gx-badge" transform="translate(${t.r*0.72},${-t.r*0.72})"><circle r="8"></circle><text y="3">${hidden>99?'99+':hidden}</text></g>`:''}`;
+    gN.appendChild(g);
+  });
+  document.getElementById('gxCount').textContent = vis.size+' node'+(vis.size!==1?'s':'')+' · '+links.length+' edge'+(links.length!==1?'s':'');
+  tick(links);
+}
+
+/* ====================== FORCE SIMULATION ====================== */
+let alpha=1, dragId=null, raf=null;
+function step(links){
+  const ids=[...vis], cx=svg.clientWidth/2, cy=svg.clientHeight/2;
+  for(const id of ids){ const n=N[id]; n.fx=0; n.fy=0; }
+  // repulsion (O(n^2))
+  for(let i=0;i<ids.length;i++) for(let j=i+1;j<ids.length;j++){
+    const a=N[ids[i]], b=N[ids[j]]; let dx=a.x-b.x, dy=a.y-b.y, d2=dx*dx+dy*dy||1; const d=Math.sqrt(d2);
+    const f=2600/d2; const ux=dx/d, uy=dy/d; a.fx+=ux*f; a.fy+=uy*f; b.fx-=ux*f; b.fy-=uy*f;
+  }
+  // springs
+  for(const l of links){ const a=N[l.s], b=N[l.t]; let dx=b.x-a.x, dy=b.y-a.y, d=Math.sqrt(dx*dx+dy*dy)||1;
+    const rest=78, f=(d-rest)*0.035; const ux=dx/d, uy=dy/d; a.fx+=ux*f; a.fy+=uy*f; b.fx-=ux*f; b.fy-=uy*f; }
+  // gravity to center
+  for(const id of ids){ const n=N[id]; n.fx+=(cx-n.x)*0.012; n.fy+=(cy-n.y)*0.012; }
+  // integrate
+  for(const id of ids){ const n=N[id]; if(id===dragId) continue;
+    n.vx=(n.vx+n.fx*alpha)*0.86; n.vy=(n.vy+n.fy*alpha)*0.86; n.x+=n.vx*0.5; n.y+=n.vy*0.5; }
+  alpha=Math.max(alpha*0.985, 0.02);
+}
+function paint(links){
+  [...gN.children].forEach(g=>{ const n=N[g.dataset.id]; g.setAttribute('transform',`translate(${n.x},${n.y})`); });
+  [...gE.children].forEach(line=>{ const l=links[+line.dataset.i]; const a=N[l.s], b=N[l.t];
+    line.setAttribute('x1',a.x); line.setAttribute('y1',a.y); line.setAttribute('x2',b.x); line.setAttribute('y2',b.y); });
+  [...gEL.children].forEach(tx=>{ const l=links[+tx.dataset.i]; const a=N[l.s], b=N[l.t];
+    tx.setAttribute('x',(a.x+b.x)/2); tx.setAttribute('y',(a.y+b.y)/2); });
+}
+function loop(links){ step(links); paint(links); raf=requestAnimationFrame(()=>loop(links)); }
+function tick(links){ if(raf) cancelAnimationFrame(raf); alpha=Math.max(alpha,0.9); loop(links); }
+function reheat(){ alpha=1; }
+
+/* ====================== INTERACTION ====================== */
+function toGraph(px,py){ const r=svg.getBoundingClientRect(); return { x:(px-r.left-view.tx)/view.k, y:(py-r.top-view.ty)/view.k }; }
+
+gN.addEventListener('pointerover', e=>{ const g=e.target.closest('.gx-node'); if(g) g.classList.add('hover'); });
+gN.addEventListener('pointerout', e=>{ const g=e.target.closest('.gx-node'); if(g) g.classList.remove('hover'); });
+gN.addEventListener('pointerdown', e=>{ const g=e.target.closest('.gx-node'); if(!g) return;
+  dragId=g.dataset.id; svg.setPointerCapture(e.pointerId); e.stopPropagation();
+});
+svg.addEventListener('pointermove', e=>{
+  if(dragId){ const p=toGraph(e.clientX,e.clientY); N[dragId].x=p.x; N[dragId].y=p.y; N[dragId].vx=0; N[dragId].vy=0; reheat(); }
+  else if(panning){ view.tx=panStart.tx+(e.clientX-panStart.x); view.ty=panStart.ty+(e.clientY-panStart.y); applyView(); }
+});
+let clickMoved=false;
+gN.addEventListener('pointerup', e=>{ const g=e.target.closest('.gx-node'); if(g && dragId===g.dataset.id && !clickMoved) selectNode(g.dataset.id); });
+window.addEventListener('pointerup', ()=>{ dragId=null; panning=false; svg.classList.remove('panning'); });
+
+// background pan + wheel zoom
+let panning=false, panStart=null;
+svg.addEventListener('pointerdown', e=>{ if(e.target.closest('.gx-node')) return; panning=true; svg.classList.add('panning'); panStart={x:e.clientX,y:e.clientY,tx:view.tx,ty:view.ty}; });
+svg.addEventListener('wheel', e=>{ e.preventDefault(); const r=svg.getBoundingClientRect(); const mx=e.clientX-r.left, my=e.clientY-r.top;
+  const f=e.deltaY<0?1.12:0.89; const k2=Math.max(0.2,Math.min(3,view.k*f));
+  view.tx=mx-(mx-view.tx)*(k2/view.k); view.ty=my-(my-view.ty)*(k2/view.k); view.k=k2; applyView(); }, {passive:false});
+
+function zoomBy(f){ const k2=Math.max(0.2,Math.min(3,view.k*f)); const cx=svg.clientWidth/2, cy=svg.clientHeight/2;
+  view.tx=cx-(cx-view.tx)*(k2/view.k); view.ty=cy-(cy-view.ty)*(k2/view.k); view.k=k2; applyView(); }
+
+function fit(){ if(!vis.size) return; let minX=1e9,minY=1e9,maxX=-1e9,maxY=-1e9;
+  vis.forEach(id=>{ const n=N[id]; minX=Math.min(minX,n.x); minY=Math.min(minY,n.y); maxX=Math.max(maxX,n.x); maxY=Math.max(maxY,n.y); });
+  const pad=70, w=svg.clientWidth, h=svg.clientHeight; const gw=maxX-minX+pad*2, gh=maxY-minY+pad*2;
+  view.k=Math.max(0.2,Math.min(2, Math.min(w/gw, h/gh))); view.tx=w/2-((minX+maxX)/2)*view.k; view.ty=h/2-((minY+maxY)/2)*view.k; applyView(); }
+
+/* ====================== EXPAND / SELECT / SEARCH ====================== */
+function expand(id){ const n=N[id]; let added=0; adj(id).forEach(nb=>{ if(!vis.has(nb)){ vis.add(nb);
+  N[nb].x=n.x+(Math.random()-.5)*80; N[nb].y=n.y+(Math.random()-.5)*80; added++; } });
+  reheat(); render(); return added; }
+function expandSelected(){ if(sel) expand(sel); }
+function expandAll(){ Object.keys(N).forEach(id=>vis.add(id)); reheat(); render(); setTimeout(fit,1400); }
+
+function selectNode(id){ sel=id; [...gN.children].forEach(g=>g.classList.toggle('sel',g.dataset.id===id));
+  const n=N[id], t=TYPE[n.type];
+  document.getElementById('gxdIc').style.background=t.color;
+  document.getElementById('gxdIc').innerHTML=`<i class="ph-fill ${t.icon}"></i>`;
+  document.getElementById('gxdKind').textContent=n.type;
+  document.getElementById('gxdName').textContent=n.label;
+  const props={id, ...PROPS[n.type]};
+  document.getElementById('gxdProps').innerHTML=Object.entries(props).map(([k,v])=>`<span class="k">${k}</span><span class="v">${v}</span>`).join('');
+  document.getElementById('gxdProv').textContent=`source     neo4j\nnode_id    ${n.type[0].toLowerCase()}:${1000+Object.keys(N).indexOf(id)}\ntemplate   assets_overdue_for_task@3\ngraph_ver  2026-06-04T09:00Z`;
+  const hid=degHidden(id);
+  const btn=document.getElementById('gxdExpand');
+  btn.style.display = hid>0?'inline-flex':'none';
+  btn.innerHTML=`<i class="ph ph-graph"></i> Expand ${hid} neighbour${hid!==1?'s':''}`;
+  document.getElementById('gxDetail').classList.add('open');
+}
+function closeDetail(){ document.getElementById('gxDetail').classList.remove('open'); sel=null; [...gN.children].forEach(g=>g.classList.remove('sel')); }
+function searchNodes(q){ q=q.trim().toLowerCase(); [...gN.children].forEach(g=>{ const n=N[g.dataset.id];
+  const hit=!q || n.id.toLowerCase().includes(q) || n.label.toLowerCase().includes(q); g.classList.toggle('dim',!!q&&!hit); }); }
+
+/* ====================== LEGEND + SEED ====================== */
+document.getElementById('gxLegend').innerHTML = Object.entries(TYPE)
+  .filter(([k])=>k!=='Reading'&&k!=='AssetClass')
+  .map(([k,t])=>`<span class="lk"><span class="sw" style="background:${t.color}"></span>${k}</span>`).join('');
+
+function seed(){ vis=new Set(['SITE-NORTH']); sel=null; view={k:1,tx:0,ty:0}; applyView();
+  N['SITE-NORTH'].x=svg.clientWidth/2; N['SITE-NORTH'].y=svg.clientHeight/2;
+  closeDetail(); render(); reheat(); setTimeout(()=>{ expand('SITE-NORTH'); setTimeout(fit,900); },350); }
+
+window.addEventListener('resize', ()=>{ /* keep layout */ });
+seed();
+</script>
+</body>
+</html>

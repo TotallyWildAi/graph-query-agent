@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Orchestration Console — design artifacts</title>
+<link rel="stylesheet" href="assets/console-system.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<style>
+  body{ background:#0A0B0D; color:#fff; min-height:100vh; }
+  .wrap{ max-width:1080px; margin:0 auto; padding:56px 28px 80px; }
+  .hero{ display:flex; align-items:center; gap:14px; margin-bottom:8px; }
+  .hero .mark{ width:46px; height:46px; border-radius:12px; background:var(--accent-cyan); display:grid; place-items:center; font-size:24px; color:#fff; }
+  h1{ font-family:var(--font-display); font-weight:700; font-size:34px; margin:0; letter-spacing:-.01em; }
+  .sub{ color:#9aa1ad; font-size:14px; max-width:64ch; line-height:1.6; margin:14px 0 8px; }
+  .note{ font-family:var(--font-mono); font-size:11px; color:#6b7280; margin-bottom:40px; }
+  .grp{ font-family:var(--font-mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:#6b7280; margin:34px 0 14px; }
+  .grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(248px,1fr)); gap:12px; }
+  a.card{ display:flex; align-items:center; gap:12px; padding:15px 16px; background:#15171b; border:1px solid #23262d; border-radius:12px; color:#fff; text-decoration:none; transition:all .18s ease; }
+  a.card:hover{ border-color:var(--accent-cyan); background:#1a1d22; transform:translateY(-1px); }
+  a.card i{ font-size:20px; color:var(--accent-cyan); }
+  a.card .t{ font-size:14px; font-weight:500; }
+  a.card .d{ font-size:11.5px; color:#9aa1ad; margin-top:2px; }
+  .tag{ margin-left:auto; font-family:var(--font-mono); font-size:9px; letter-spacing:.06em; text-transform:uppercase; padding:2px 7px; border-radius:6px; background:rgba(20,153,255,.15); color:#7cc4ff; }
+  .foot{ margin-top:48px; font-size:12px; color:#6b7280; line-height:1.6; border-top:1px solid #23262d; padding-top:20px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hero"><span class="mark"><i class="ph ph-graph"></i></span><h1>Orchestration Console</h1></div>
+  <p class="sub">UI design artifacts for a controlled, auditable agent that turns plain-English requests into reviewed, parameterized Cypher over a Neo4j knowledge graph — every value traceable to its source.</p>
+  <p class="note">Static mockups · no backend / no database required · open any screen below</p>
+
+  <div class="grp">Screens</div>
+  <div class="grid">
+    <a class="card" href="Console - Ask.html"><i class="ph ph-terminal-window"></i><div><div class="t">Ask</div><div class="d">Request → intent → plan</div></div></a>
+    <a class="card" href="Results - Lineage.html"><i class="ph ph-table"></i><div><div class="t">Results + lineage</div><div class="d">Evidence, per-value provenance</div></div></a>
+    <a class="card" href="Trace - Audit.html"><i class="ph ph-tree-structure"></i><div><div class="t">Trace / audit</div><div class="d">Step inspector</div></div></a>
+    <a class="card" href="Clarification.html"><i class="ph ph-question"></i><div><div class="t">Clarification</div><div class="d">Disambiguation</div></div></a>
+    <a class="card" href="Intent catalogue.html"><i class="ph ph-list-checks"></i><div><div class="t">Intent catalogue</div><div class="d">Registered capabilities</div></div></a>
+    <a class="card" href="Tool registry.html"><i class="ph ph-plugs"></i><div><div class="t">Tool registry</div><div class="d">Manifests + health</div></div></a>
+    <a class="card" href="Graph schema.html"><i class="ph ph-graph"></i><div><div class="t">Graph schema</div><div class="d">Governed model</div></div></a>
+    <a class="card" href="Graph explorer - Sigma.html"><i class="ph ph-share-network"></i><div><div class="t">Graph explorer</div><div class="d">Sigma.js + ForceAtlas2</div></div><span class="tag">webgl</span></a>
+    <a class="card" href="Graph explorer.html"><i class="ph ph-share-network"></i><div><div class="t">Graph explorer</div><div class="d">No-dependency SVG</div></div><span class="tag">no-dep</span></a>
+  </div>
+
+  <div class="foot">Self-contained HTML/CSS design artifacts. Fonts (Google Fonts) and icons (Phosphor) load from CDNs; the Sigma graph engine is bundled locally. No Neo4j or backend needed to view.</div>
+</div>
+</body>
+</html>

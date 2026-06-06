@@ -10,3 +10,7 @@ Thumbs.db
 
 # Design-iteration screenshots (verification artifacts, not deliverables)
 screenshots/
+
+
+# Build deps (the built bundle in assets/ is committed; node_modules is not)
+node_modules/
