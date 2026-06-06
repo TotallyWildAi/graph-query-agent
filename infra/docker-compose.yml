@@ -1,0 +1,85 @@
+# Backend infrastructure for the orchestration agent (local dev).
+#
+#   docker compose -f infra/docker-compose.yml up --build
+#
+# Brings up Neo4j (knowledge graph), Postgres (append-only trace/lineage store),
+# and the FastAPI API core. Neo4j is seeded with the shared example data and
+# Postgres with the trace schema on first boot.
+#
+# This is SEPARATE from the root docker-compose.yml, which only serves the
+# static design artifacts.
+name: orchestration-agent
+
+services:
+  neo4j:
+    image: neo4j:5.26
+    environment:
+      NEO4J_AUTH: neo4j/${NEO4J_PASSWORD:-orchestrator}
+      NEO4J_PLUGINS: '["apoc"]'
+    ports:
+      # Host ports remapped off the defaults (7474/7687) so this stack can run
+      # alongside another local Neo4j. Container-internal ports are unchanged,
+      # so the api service still reaches it at bolt://neo4j:7687.
+      - "7475:7474"   # Neo4j Browser → http://localhost:7475
+      - "7688:7687"   # Bolt
+    volumes:
+      - neo4j-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "cypher-shell -u neo4j -p ${NEO4J_PASSWORD:-orchestrator} 'RETURN 1' || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 12
+      start_period: 30s
+
+  # One-shot: load constraints + shared example data once Neo4j is healthy.
+  neo4j-seed:
+    image: neo4j:5.26
+    depends_on:
+      neo4j:
+        condition: service_healthy
+    environment:
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD:-orchestrator}
+    volumes:
+      - ./neo4j/seed.cypher:/seed.cypher:ro
+    entrypoint:
+      - sh
+      - -c
+      - cypher-shell -a bolt://neo4j:7687 -u neo4j -p "$$NEO4J_PASSWORD" -f /seed.cypher
+    restart: "no"
+
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: orchestrator
+      POSTGRES_PASSWORD: orchestrator
+      POSTGRES_DB: trace
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      # *.sql here runs once, on an empty data dir, in filename order.
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U orchestrator -d trace"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  api:
+    build: ../backend
+    depends_on:
+      neo4j:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    environment:
+      NEO4J_URI: bolt://neo4j:7687
+      NEO4J_USER: neo4j
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD:-orchestrator}
+      POSTGRES_DSN: postgresql://orchestrator:orchestrator@postgres:5432/trace
+    ports:
+      - "8000:8000"
+
+volumes:
+  neo4j-data:
+  postgres-data:
