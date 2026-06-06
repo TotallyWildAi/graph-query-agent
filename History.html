@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Orchestration Console — History</title>
+<link rel="stylesheet" href="assets/console-system.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<style>
+  html,body{ height:100%; } body{ margin:0; }
+
+  /* run log list */
+  .runlist{ display:flex; flex-direction:column; gap:10px; }
+  .run{ width:100%; text-align:left; background:var(--card); border:1px solid var(--ink-line); border-radius:var(--r-md); box-shadow:var(--shadow-rest); padding:13px 15px; cursor:pointer; display:flex; flex-direction:column; gap:9px; transition:border-color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease); }
+  .run:hover{ border-color:var(--ink-faint); }
+  .run.sel{ border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-cyan-soft); }
+  .run .r1{ display:flex; align-items:center; gap:10px; }
+  .run .ts{ font-family:var(--font-mono); font-size:11px; color:var(--ink-faint); white-space:nowrap; }
+  .run .rid{ font-family:var(--font-mono); font-size:11px; color:var(--ink-soft); }
+  .run .q{ font-size:13.5px; font-weight:500; color:var(--ink); line-height:1.35; }
+  .run .r3{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .run .intent{ font-family:var(--font-mono); font-size:11.5px; color:var(--ink-soft); }
+  .run .conf{ font-family:var(--font-mono); font-size:10.5px; color:var(--accent); }
+  .run .metric{ font-family:var(--font-mono); font-size:10.5px; color:var(--ink-faint); }
+
+  /* status chips (run outcome) */
+  .st{ display:inline-flex; align-items:center; gap:6px; font-family:var(--font-mono); font-size:10px; letter-spacing:.04em; text-transform:uppercase; border-radius:999px; padding:3px 9px; border:1px solid; }
+  .st .d{ width:6px; height:6px; border-radius:50%; background:currentColor; }
+  .st.done{ color:var(--read-ink); border-color:#bfe6d2; background:var(--read-soft); }
+  .st.clar{ color:#0c6fc2; border-color:#bfe1fb; background:var(--accent-cyan-soft); }
+  .st.err{ color:var(--err); border-color:#f3bcbe; background:var(--err-soft); }
+  .st.wrote{ color:var(--write-ink); border-color:#f3d6a5; background:var(--write-soft); }
+
+  /* detail (evidence pane) */
+  .d-sec{ margin-bottom:18px; }
+  .d-q{ font-size:16px; font-weight:600; line-height:1.4; }
+  .repcard{ background:var(--card-sunk); border:1px solid var(--ink-line); border-radius:var(--r-sm); padding:13px 15px; }
+  .kv2{ display:grid; grid-template-columns:auto 1fr; gap:6px 14px; font-family:var(--font-mono); font-size:12px; }
+  .kv2 .k{ color:var(--ink-faint); } .kv2 .v{ color:var(--ink); } .kv2 .v.accent{ color:var(--accent); }
+  .chips{ display:flex; flex-wrap:wrap; gap:8px; }
+  .pchip{ font-family:var(--font-mono); font-size:11.5px; border:1px solid var(--ink-line); background:var(--paper); border-radius:var(--r-sm); padding:6px 10px; }
+  .pchip .k{ color:var(--ink-faint); } .pchip .v{ color:#0c6fc2; font-weight:500; }
+  .d-actions{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; padding-top:6px; }
+  .outcome{ display:flex; gap:10px; align-items:flex-start; padding:12px 14px; border-radius:var(--r-sm); border:1px solid; }
+  .outcome i{ font-size:18px; margin-top:1px; }
+  .outcome.done{ border-color:#bfe6d2; background:var(--read-soft); } .outcome.done i{ color:var(--read-ink); }
+  .outcome.wrote{ border-color:#f3d6a5; background:var(--write-soft); } .outcome.wrote i{ color:var(--write-ink); }
+  .outcome.clar{ border-color:#bfe1fb; background:var(--accent-cyan-soft); } .outcome.clar i{ color:#0c6fc2; }
+  .outcome.err{ border-color:#f3bcbe; background:var(--err-soft); } .outcome.err i{ color:var(--err); }
+  .outcome b{ display:block; margin-bottom:2px; }
+</style>
+</head>
+<body>
+<div class="oc">
+  <div class="oc-app">
+
+    <!-- ===================== LEFT RAIL ===================== -->
+    <aside class="oc-rail">
+      <div class="oc-brand"><img src="assets/tw-stamp-light.svg" alt=""><div class="wm">Console<small>orchestration</small></div></div>
+      <div class="oc-navgrp">Workspace</div>
+      <a class="oc-nav" href="Console - Ask.html" style="text-decoration:none;"><i class="ph ph-terminal-window"></i> Ask</a>
+      <a class="oc-nav" href="Results - Lineage.html" style="text-decoration:none;"><i class="ph ph-table"></i> Results</a>
+      <a class="oc-nav" href="Trace - Audit.html" style="text-decoration:none;"><i class="ph ph-tree-structure"></i> Trace</a>
+      <div class="oc-nav on"><i class="ph ph-clock-counter-clockwise"></i> History</div>
+      <div class="oc-navgrp">Reference</div>
+      <a class="oc-nav" href="Intent catalogue.html" style="text-decoration:none;"><i class="ph ph-list-checks"></i> Intent catalogue</a>
+      <a class="oc-nav" href="Tool registry.html" style="text-decoration:none;"><i class="ph ph-plugs"></i> Tool registry</a>
+      <a class="oc-nav" href="Graph schema.html" style="text-decoration:none;"><i class="ph ph-graph"></i> Graph schema</a>
+      <a class="oc-nav" href="Graph explorer - Sigma.html" style="text-decoration:none;"><i class="ph ph-share-network"></i> Graph explorer</a>
+      <div class="oc-rail-foot">Every request is logged with its versions and is replayable — reproducibility by default.</div>
+    </aside>
+
+    <!-- ===================== MAIN ===================== -->
+    <div class="oc-main">
+      <div class="oc-top">
+        <span class="crumb">Workspace / <b>History</b></span>
+        <span class="oc-spacer"></span>
+        <span class="oc-meta"><b id="runCount">5</b> requests</span>
+        <span class="oc-pill read"><span class="dot"></span>read-only log</span>
+      </div>
+
+      <div class="oc-split">
+        <!-- ---------- WORK PANE: run log ---------- -->
+        <div class="oc-work">
+          <span class="oc-eyebrow">Request log · newest first</span>
+          <span class="oc-sub" style="font-size:11.5px; margin-top:-8px;">Every request the console has run, with its matched intent, versions and outcome. Select one to inspect or replay it.</span>
+          <div class="runlist" id="runlist"></div>
+        </div>
+
+        <!-- ---------- EVIDENCE PANE: selected run ---------- -->
+        <div class="oc-evidence">
+          <div class="oc-ev-head">
+            <i class="ph ph-receipt" style="font-size:18px;"></i>
+            <span class="oc-ev-title">Run record</span>
+            <span class="oc-spacer"></span>
+            <span class="oc-pill dim" id="detKind"><span class="dot"></span>read</span>
+          </div>
+          <div class="oc-ev-body" id="detail"><!-- filled by JS --></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ====================== RUN LOG (illustrative; reuses the shared scenario) ====================== */
+const RUNS = [
+  {
+    id:"req_8c2b1f04", ts:"2026-06-04 09:21:38", rel:"today · 09:21",
+    q:"Raise a high-priority lubrication work order for Pump P-101",
+    intent:"create_work_order", conf:0.88, kind:"write", status:"wrote", statusLabel:"write · approved",
+    metric:"WO-20485", params:[["asset_id","P-101"],["task_code","LUBE-01"],["priority","HIGH"]],
+    versions:[["intent","create_work_order@1"],["tool","cmms_create_work_order@1.2.0"],["graph_version","2026-06-04T09:00Z"],["idempotency_key","wo-8c2b1f04-01"]],
+    outcome:{cls:"wrote", icon:"ph-shield-check", title:"Work order created — WO-20485",
+      body:"Approved by <b>n.forshteyn</b> · side-effecting write, logged. Status CREATED in CMMS."}
+  },
+  {
+    id:"req_7f3a9c21", ts:"2026-06-04 09:14:21", rel:"today · 09:14",
+    q:"Which pumps at the North plant are overdue for lubrication?",
+    intent:"assets_overdue_for_task", conf:0.92, kind:"read", status:"done", statusLabel:"complete",
+    metric:"3 rows · 0.67 s", params:[["site_id","SITE-NORTH"],["task_code","LUBE-01"]],
+    versions:[["template","assets_overdue_for_task@3"],["tool","snowflake_runtime_hours@2.1"],["graph_version","2026-06-04T09:00Z"]],
+    outcome:{cls:"done", icon:"ph-check-circle", title:"Completed · 3 rows",
+      body:"P-101, P-104, P-110. Every value carries lineage (neo4j + snowflake_runtime_hours)."}
+  },
+  {
+    id:"req_5d9e2a77", ts:"2026-06-04 08:51:02", rel:"today · 08:51",
+    q:"show me the north plant pumps",
+    intent:"— ambiguous (3 candidates)", conf:0.48, kind:"read", status:"clar", statusLabel:"clarified",
+    metric:"→ assets_by_site", params:[["site_id","SITE-NORTH ✓"]],
+    versions:[["candidates","assets_overdue_for_task · assets_by_site · asset_health_summary"],["chosen","assets_by_site@2"],["graph_version","2026-06-04T09:00Z"]],
+    outcome:{cls:"clar", icon:"ph-question", title:"Clarified before running",
+      body:"Confidence below threshold (0.48). The user chose <b>assets_by_site</b> — no query ran until a capability was confirmed."}
+  },
+  {
+    id:"req_3f1c8b90", ts:"2026-06-03 17:32:55", rel:"yesterday · 17:32",
+    q:"overdue lubrication tasks at the harbour site",
+    intent:"assets_overdue_for_task", conf:0.90, kind:"read", status:"err", statusLabel:"error",
+    metric:"parameter unresolved", params:[["site_id","? “harbour”"],["task_code","LUBE-01"]],
+    versions:[["template","assets_overdue_for_task@3"],["graph_version","2026-06-03T09:00Z"]],
+    outcome:{cls:"err", icon:"ph-warning-circle", title:"Halted — site not resolved",
+      body:"“harbour” did not resolve to a registered <span style=\"font-family:var(--font-mono)\">Site</span> id. No partial query ran; the request was rejected with a resolution error."}
+  },
+  {
+    id:"req_2a7d4e11", ts:"2026-06-03 16:10:09", rel:"yesterday · 16:10",
+    q:"asset health summary for the North plant",
+    intent:"asset_health_summary", conf:0.81, kind:"read", status:"done", statusLabel:"complete",
+    metric:"12 rows · 0.9 s", params:[["site_id","SITE-NORTH"]],
+    versions:[["template","asset_health_summary@2"],["tool","snowflake_runtime_hours@2.1"],["graph_version","2026-06-03T09:00Z"]],
+    outcome:{cls:"done", icon:"ph-check-circle", title:"Completed · 12 rows",
+      body:"Condition rollup across 12 assets at SITE-NORTH."}
+  },
+];
+
+const KINDPILL = { read:'<span class="oc-pill read"><span class="dot"></span>read</span>',
+                   write:'<span class="oc-pill write"><span class="dot"></span>write · side-effect</span>' };
+
+function renderList(){
+  document.getElementById('runlist').innerHTML = RUNS.map((r,i)=>`
+    <button class="run${i===0?' sel':''}" data-id="${r.id}" onclick="select('${r.id}')">
+      <div class="r1">
+        <span class="ts">${r.rel}</span><span class="oc-spacer"></span>
+        <span class="st ${r.status}"><span class="d"></span>${r.statusLabel}</span>
+      </div>
+      <div class="q">${r.q}</div>
+      <div class="r3">
+        <span class="rid">${r.id}</span><span class="metric">·</span>
+        <span class="intent">${r.intent}</span>
+        ${r.conf?`<span class="conf">${r.conf.toFixed(2)}</span>`:''}
+        <span class="oc-spacer"></span><span class="metric">${r.metric}</span>
+      </div>
+    </button>`).join('');
+  document.getElementById('runCount').textContent = RUNS.length;
+}
+
+function select(id){
+  document.querySelectorAll('.run').forEach(b=>b.classList.toggle('sel', b.dataset.id===id));
+  const r = RUNS.find(x=>x.id===id);
+  document.getElementById('detKind').className = 'oc-pill ' + (r.kind==='write'?'write':'dim');
+  document.getElementById('detKind').innerHTML = `<span class="dot"></span>${r.kind}`;
+  const D = document.getElementById('detail');
+  D.innerHTML = `
+    <div class="d-sec"><div class="d-q">${r.q}</div>
+      <div class="oc-sub" style="margin-top:8px; font-family:var(--font-mono); font-size:11.5px;">${r.id} · ${r.ts}</div>
+    </div>
+
+    <div class="d-sec">
+      <div class="oc-detail-label" style="margin-bottom:8px;">Matched intent</div>
+      <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+        <span class="oc-intent-name" style="font-size:15px;">${r.intent}</span>
+        ${r.conf?`<span class="conf" style="font-family:var(--font-mono); color:var(--accent);">${r.conf.toFixed(2)}</span>`:''}
+        <span class="oc-spacer"></span>${KINDPILL[r.kind]}
+      </div>
+    </div>
+
+    <div class="d-sec">
+      <div class="oc-detail-label" style="margin-bottom:8px;">Parameters</div>
+      <div class="chips">${r.params.map(([k,v])=>`<span class="pchip"><span class="k">${k} =</span> <span class="v">${v}</span></span>`).join('')}</div>
+    </div>
+
+    <div class="d-sec">
+      <div class="oc-detail-label" style="margin-bottom:8px;">Outcome</div>
+      <div class="outcome ${r.outcome.cls}"><i class="ph ${r.outcome.icon}"></i><div style="font-size:12.5px;"><b>${r.outcome.title}</b>${r.outcome.body}</div></div>
+    </div>
+
+    <div class="d-sec">
+      <div class="oc-detail-label" style="margin-bottom:8px;">Pinned versions <span style="text-transform:none; letter-spacing:0; color:var(--ink-faint);">— what a replay re-runs</span></div>
+      <div class="repcard"><div class="kv2">
+        <span class="k">request_id</span><span class="v accent">${r.id}</span>
+        ${r.versions.map(([k,v])=>`<span class="k">${k}</span><span class="v">${v}</span>`).join('')}
+      </div></div>
+    </div>
+
+    <div class="d-actions">
+      <span class="oc-btn primary" onclick="replay('${r.id}')"><i class="ph ph-arrow-counter-clockwise"></i> Replay this run</span>
+      ${r.status==='done'?'<a class="oc-link" href="Results - Lineage.html"><i class="ph ph-table"></i> Open results</a>':''}
+      ${r.status==='clar'?'<a class="oc-link" href="Clarification.html"><i class="ph ph-question"></i> View clarification</a>':''}
+      <a class="oc-link" href="Trace - Audit.html"><i class="ph ph-tree-structure"></i> View full trace</a>
+    </div>`;
+  D.scrollTop = 0;
+}
+
+function replay(id){
+  const r = RUNS.find(x=>x.id===id);
+  alert(`Replay ${id}\n\nRe-runs "${r.q}" with the pinned versions above — deterministic: same templates, tool versions and graph_version produce the same result. (Prototype — would open the Ask flow pre-loaded.)`);
+}
+
+renderList(); select(RUNS[0].id);
+</script>
+</body>
+</html>
