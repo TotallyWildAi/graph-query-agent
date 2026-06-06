@@ -15,8 +15,28 @@
   .gx-tools{ display:flex; align-items:center; gap:10px; padding:12px 20px; background:#fff; border-bottom:1px solid var(--ink-line); }
   .gx-iconbtn{ width:34px; height:34px; border-radius:9px; border:1px solid var(--ink-line); background:#fff; display:grid; place-items:center; color:var(--ink-soft); cursor:pointer; font-size:16px; transition:all .18s var(--ease); }
   .gx-iconbtn:hover{ border-color:var(--ink-faint); color:var(--ink); }
-  .gx-search{ flex:1; max-width:460px; display:flex; align-items:center; gap:9px; background:var(--paper); border:1px solid var(--ink-line); border-radius:999px; padding:8px 16px; color:var(--ink-faint); }
+  .gx-searchwrap{ position:relative; flex:1; max-width:460px; }
+  .gx-search{ display:flex; align-items:center; gap:9px; background:var(--paper); border:1px solid var(--ink-line); border-radius:999px; padding:8px 16px; color:var(--ink-faint); }
+  .gx-search:focus-within{ border-color:var(--accent-cyan); box-shadow:0 0 0 3px var(--accent-cyan-soft); background:#fff; }
   .gx-search input{ border:none; outline:none; background:none; font-family:var(--font-body); font-size:13.5px; color:var(--ink); flex:1; }
+  /* autocomplete dropdown */
+  .gx-ac{ position:absolute; top:calc(100% + 6px); left:0; right:0; background:#fff; border:1px solid var(--ink-line); border-radius:12px; box-shadow:var(--shadow-lift); padding:5px; z-index:20; display:none; max-height:320px; overflow:auto; }
+  .gx-ac.open{ display:block; }
+  .gx-ac-row{ display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:8px; cursor:pointer; font-size:13px; }
+  .gx-ac-row.hot, .gx-ac-row:hover{ background:var(--paper); }
+  .gx-ac-row .acdot{ width:9px; height:9px; border-radius:50%; flex:none; }
+  .gx-ac-row .aclab{ font-weight:500; color:var(--ink); }
+  .gx-ac-row .acid{ font-family:var(--font-mono); font-size:10.5px; color:var(--ink-faint); }
+  .gx-ac-row .ac-here{ font-family:var(--font-mono); font-size:10px; color:var(--ink-faint); }
+  .gx-ac-row .ac-exp{ font-family:var(--font-mono); font-size:11px; font-weight:500; color:#0c6fc2; background:var(--accent-cyan-soft); border:1px solid #bfe1fb; border-radius:999px; padding:2px 9px; cursor:pointer; }
+  .gx-ac-row .ac-exp:hover{ background:var(--accent-cyan); color:#fff; border-color:var(--accent-cyan); }
+  /* auto-expand toggle */
+  .gx-switch{ display:inline-flex; align-items:center; gap:8px; font-size:12px; color:var(--ink-soft); cursor:pointer; user-select:none; white-space:nowrap; }
+  .gx-switch input{ position:absolute; opacity:0; pointer-events:none; }
+  .gx-switch .sw{ width:34px; height:19px; border-radius:999px; background:var(--ink-line); position:relative; transition:background .18s var(--ease); flex:none; }
+  .gx-switch .sw::after{ content:""; position:absolute; top:2px; left:2px; width:15px; height:15px; border-radius:50%; background:#fff; box-shadow:0 1px 2px rgba(0,0,0,.25); transition:transform .18s var(--ease); }
+  .gx-switch input:checked + .sw{ background:var(--accent-cyan); }
+  .gx-switch input:checked + .sw::after{ transform:translateX(15px); }
 
   /* stage */
   .gx-stage{ position:relative; flex:1; min-height:0; background:
@@ -96,7 +116,13 @@
       <!-- canvas toolbar -->
       <div class="gx-tools">
         <span class="gx-iconbtn" title="Reset view" onclick="seed()"><i class="ph ph-arrow-counter-clockwise"></i></span>
-        <span class="gx-search"><i class="ph ph-magnifying-glass"></i><input placeholder="Search nodes — SITE-NORTH, P-101, LUBE-01…" id="gxq" oninput="searchNodes(this.value)"></span>
+        <div class="gx-searchwrap">
+          <span class="gx-search"><i class="ph ph-magnifying-glass"></i><input id="gxq" autocomplete="off" placeholder="Search nodes — type to find, ↵ to focus, + to expand" oninput="acInput(this.value)" onkeydown="acKey(event)" onfocus="acInput(this.value)"></span>
+          <div class="gx-ac" id="gxAc"></div>
+        </div>
+        <label class="gx-switch" title="When on, focusing a search result also pulls in all its neighbours">
+          <input type="checkbox" id="gxAuto" checked onchange="setAuto(this.checked)"><span class="sw"></span> Auto-expand
+        </label>
         <span class="oc-spacer"></span>
         <span class="oc-btn sm" onclick="expandAll()"><i class="ph ph-graph"></i> Expand full graph</span>
         <span class="gx-iconbtn" title="Fit to view" onclick="fit()"><i class="ph ph-crop"></i></span>
@@ -214,6 +240,7 @@ function render(){
     gN.appendChild(g);
   });
   document.getElementById('gxCount').textContent = vis.size+' node'+(vis.size!==1?'s':'')+' · '+links.length+' edge'+(links.length!==1?'s':'');
+  applyDim();   // keep search dimming after re-render
   tick(links);
 }
 
@@ -302,8 +329,55 @@ function selectNode(id){ sel=id; [...gN.children].forEach(g=>g.classList.toggle(
   document.getElementById('gxDetail').classList.add('open');
 }
 function closeDetail(){ document.getElementById('gxDetail').classList.remove('open'); sel=null; [...gN.children].forEach(g=>g.classList.remove('sel')); }
-function searchNodes(q){ q=q.trim().toLowerCase(); [...gN.children].forEach(g=>{ const n=N[g.dataset.id];
-  const hit=!q || n.id.toLowerCase().includes(q) || n.label.toLowerCase().includes(q); g.classList.toggle('dim',!!q&&!hit); }); }
+
+/* ---- search + autocomplete (matches the Sigma explorer) ---- */
+let acQuery='', autoExpand=true, acItems=[], acIdx=-1;
+const nbCount = id => vis.has(id) ? degHidden(id) : adj(id).length;   // expandable neighbours
+function applyDim(){ [...gN.children].forEach(g=>{ const n=N[g.dataset.id];
+  const hit=!acQuery || n.id.toLowerCase().includes(acQuery) || n.label.toLowerCase().includes(acQuery);
+  g.classList.toggle('dim', !!acQuery && !hit); }); }
+function acInput(q){
+  acQuery=q.trim().toLowerCase(); applyDim();
+  if(!acQuery){ closeAc(); return; }
+  acItems = Object.values(N)
+    .map(n=>({n, idx:(n.id.toLowerCase().includes(acQuery)?n.id.toLowerCase().indexOf(acQuery):99)}))
+    .filter(x=> x.n.id.toLowerCase().includes(acQuery) || x.n.label.toLowerCase().includes(acQuery))
+    .sort((a,b)=> a.idx-b.idx || a.n.id.localeCompare(b.n.id)).slice(0,8).map(x=>x.n);
+  acIdx = acItems.length?0:-1; renderAc();
+}
+function renderAc(){
+  const ac=document.getElementById('gxAc');
+  if(!acItems.length){ closeAc(); return; }
+  ac.innerHTML = acItems.map((n,i)=>{ const t=TYPE[n.type], cnt=nbCount(n.id), here=vis.has(n.id);
+    return `<div class="gx-ac-row${i===acIdx?' hot':''}" data-id="${n.id}" onmousedown="acPick('${n.id}',event)">
+      <span class="acdot" style="background:${t.color}"></span>
+      <span class="aclab">${n.label}</span><span class="acid">${n.id}</span><span class="oc-spacer"></span>
+      ${cnt>0?`<button class="ac-exp" title="Expand ${cnt} neighbour${cnt!==1?'s':''}" onmousedown="acExpand('${n.id}',event)">+${cnt}</button>`
+             :`<span class="ac-here">${here?'shown':'leaf'}</span>`}
+    </div>`; }).join('');
+  ac.classList.add('open');
+}
+function acKey(e){
+  if(!acItems.length){ if(e.key==='Escape') closeAc(); return; }
+  if(e.key==='ArrowDown'){ e.preventDefault(); acIdx=(acIdx+1)%acItems.length; renderAc(); }
+  else if(e.key==='ArrowUp'){ e.preventDefault(); acIdx=(acIdx-1+acItems.length)%acItems.length; renderAc(); }
+  else if(e.key==='Enter'){ e.preventDefault(); if(acIdx>=0) acPick(acItems[acIdx].id); }
+  else if(e.key==='Escape'){ closeAc(); }
+}
+function acPick(id,e){ if(e) e.preventDefault(); focusNode(id, autoExpand); closeAc(); }
+function acExpand(id,e){ e.preventDefault(); e.stopPropagation(); focusNode(id, true); renderAc(); }
+function closeAc(){ const ac=document.getElementById('gxAc'); if(ac){ ac.classList.remove('open'); ac.innerHTML=''; } acItems=[]; acIdx=-1; }
+function setAuto(on){ autoExpand=on; }
+function centerOn(id){ const n=N[id]; if(!n) return; const w=svg.clientWidth, h=svg.clientHeight;
+  view.k=Math.max(view.k,0.9); view.tx=w/2-n.x*view.k; view.ty=h/2-n.y*view.k; applyView(); }
+function focusNode(id, expandIt){
+  const fresh=!vis.has(id);
+  if(fresh){ vis.add(id); N[id].x=svg.clientWidth/2+(Math.random()-.5)*40; N[id].y=svg.clientHeight/2+(Math.random()-.5)*40; N[id].vx=0; N[id].vy=0; }
+  if(expandIt){ expand(id); } else { render(); reheat(); }
+  selectNode(id);
+  setTimeout(()=>centerOn(id), fresh||expandIt ? 700 : 0);
+}
+document.addEventListener('mousedown', e=>{ if(!e.target.closest('.gx-searchwrap')) closeAc(); });
 
 /* ====================== LEGEND + SEED ====================== */
 document.getElementById('gxLegend').innerHTML = Object.entries(TYPE)
