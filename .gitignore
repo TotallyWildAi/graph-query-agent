@@ -13,3 +13,6 @@ screenshots/
 
 # Reference captures — keep STYLE.md + tokens.json in git, not the heavy PNGs
 design-reference/**/*.png
+
+# Build deps (the built bundle in assets/ is committed; node_modules is not)
+node_modules/

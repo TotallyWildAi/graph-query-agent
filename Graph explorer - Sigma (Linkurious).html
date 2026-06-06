@@ -6,10 +6,8 @@
 <title>Orchestration Console — Graph explorer (Sigma.js) · Linkurious direction</title>
 <link rel="stylesheet" href="assets/linkurious-system.css">
 <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
-<!-- real graph-rendering stack: graphology (model) + Sigma.js (WebGL renderer); force-directed layout below -->
-<script src="https://cdn.jsdelivr.net/npm/graphology@0.25.4/dist/graphology.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/graphology-library@0.7.0/dist/graphology-library.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sigma@2.4.0/build/sigma.min.js"></script>
+<!-- graph stack bundled locally (graphology + Sigma.js WebGL + real ForceAtlas2);
+     built from tools/graph-explorer via esbuild → assets/graph-explorer.bundle.js (loaded at end of body) -->
 <style>
   html,body{ height:100%; } body{ margin:0; }
   .gx-tools{ display:flex; align-items:center; gap:10px; padding:12px 20px; background:#fff; border-bottom:1px solid var(--ink-line); }
@@ -61,13 +59,13 @@
       <a class="oc-nav" href="Tool registry (Linkurious).html" style="text-decoration:none;"><i class="ph ph-plugs"></i> Tool registry</a>
       <a class="oc-nav" href="Graph schema (Linkurious).html" style="text-decoration:none;"><i class="ph ph-graph"></i> Graph schema</a>
       <div class="oc-nav on"><i class="ph ph-share-network"></i> Graph explorer</div>
-      <div class="oc-rail-foot">WebGL render via Sigma.js. Read-only — every node carries source &amp; ID.</div>
+      <div class="oc-rail-foot">WebGL render via Sigma.js + ForceAtlas2. Read-only — every node carries source &amp; ID.</div>
     </aside>
 
     <div class="oc-main">
       <div class="oc-top">
         <span class="crumb">Workspace / <b>Graph explorer</b></span>
-        <span class="gx-engine"><i class="ph ph-lightning"></i> sigma.js · force-directed · webgl</span>
+        <span class="gx-engine"><i class="ph ph-lightning"></i> sigma.js · forceatlas2 · webgl</span>
         <span class="oc-spacer"></span>
         <a class="oc-link" href="Graph explorer (Linkurious).html"><i class="ph ph-arrow-u-up-left"></i> no-dependency version</a>
         <span class="oc-pill read"><span class="dot"></span>read-only</span>
@@ -98,141 +96,12 @@
         </div>
         <div class="gx-status"><span class="gx-chip"><span class="dot"></span><span id="gxCount">…</span></span></div>
         <div class="gx-zoom"><button onclick="zoomBy('out')"><i class="ph ph-minus"></i></button><button onclick="zoomBy('in')"><i class="ph ph-plus"></i></button><button onclick="fit()" title="Fit"><i class="ph ph-crosshair"></i></button></div>
-        <div class="gx-err" id="gxErr"><div class="oc-empty"><div class="glyph"><i class="ph ph-wifi-slash"></i></div><div class="ttl">Graph libraries didn’t load</div><div class="oc-sub">Sigma.js / graphology load from a CDN — this page needs network. Use the <a href="Graph explorer (Linkurious).html">no-dependency version</a> offline.</div></div></div>
+        <div class="gx-err" id="gxErr"><div class="oc-empty"><div class="glyph"><i class="ph ph-wifi-slash"></i></div><div class="ttl">Graph libraries didn’t load</div><div class="oc-sub">The bundled graph engine (assets/graph-explorer.bundle.js) failed to load. Rebuild it with <code>npm install &amp;&amp; npm run build</code> in tools/graph-explorer, or use the <a href="Graph explorer (Linkurious).html">no-dependency version</a>.</div></div></div>
       </div>
     </div>
   </div>
 </div>
 
-<script>
-/* ====================== DOMAIN GRAPH (maintenance KG, spec §11) ====================== */
-const TYPE = {
-  Site:{color:'#0A0B0D',icon:'ph-buildings',size:18}, Asset:{color:'#1499FF',icon:'ph-gear-six',size:13},
-  AssetClass:{color:'#8D8D8D',icon:'ph-tag',size:9}, Component:{color:'#46B3FF',icon:'ph-puzzle-piece',size:8},
-  FailureMode:{color:'#E5484D',icon:'ph-warning',size:9}, MaintenanceTask:{color:'#19A05F',icon:'ph-wrench',size:10},
-  WorkOrder:{color:'#E8973A',icon:'ph-clipboard-text',size:11}, Sensor:{color:'#7B6BE0',icon:'ph-broadcast',size:8},
-  Reading:{color:'#B9BFC8',icon:'ph-pulse',size:5}, Technician:{color:'#475569',icon:'ph-user',size:9},
-};
-const PROPS = { Site:{region:'Northern'}, Asset:{status:'OPERATING'}, AssetClass:{}, Component:{}, FailureMode:{severity:'7 / 10'},
-  MaintenanceTask:{interval_days:'90'}, WorkOrder:{status:'OPEN'}, Sensor:{type:'vibration'}, Reading:{}, Technician:{shift:'day'} };
-
-const N = {}, L = [];
-function add(id,type,label){ if(!N[id]) N[id]={id,type,label}; return N[id]; }
-function lk(a,b,rel){ L.push({s:a,t:b,rel}); }
-add('SITE-NORTH','Site','North Plant');
-add('CC-CENTRIF','AssetClass','Centrifugal Pump'); add('CC-BOOST','AssetClass','Booster Pump');
-const PUMPS=[['P-101','CC-CENTRIF'],['P-104','CC-CENTRIF'],['P-110','CC-BOOST'],['P-118','CC-CENTRIF'],['P-122','CC-BOOST'],
-  ['P-130','CC-CENTRIF'],['P-141','CC-BOOST'],['P-150','CC-CENTRIF'],['P-163','CC-CENTRIF'],['P-177','CC-BOOST'],['P-188','CC-CENTRIF'],['P-195','CC-BOOST']];
-const TASKS=['LUBE-01','ALIGN-02','VIB-03']; TASKS.forEach(t=>add(t,'MaintenanceTask',t));
-const FMS=['Bearing wear','Seal leak','Misalignment']; FMS.forEach((f,i)=>add('FM-'+i,'FailureMode',f));
-add('TECH-AR','Technician','A. Rivera'); add('TECH-JL','Technician','J. Lind');
-PUMPS.forEach(([p,cls],pi)=>{
-  add(p,'Asset','Pump '+p); lk('SITE-NORTH',p,'CONTAINS'); lk(p,cls,'OF_TYPE');
-  ['Bearing','Seal','Impeller'].forEach((c,ci)=>{
-    const cid=p+'-'+c.slice(0,3).toUpperCase(); add(cid,'Component',c); lk(p,cid,'HAS_COMPONENT');
-    lk(cid,'FM-'+(ci%FMS.length),'SUBJECT_TO');
-    const sid=p+'-S'+ci; add(sid,'Sensor',c+' sensor'); lk(sid,cid,'MONITORS');
-    const rid=p+'-R'+ci; add(rid,'Reading','reading'); lk(sid,rid,'EMITS');
-  });
-  FMS.forEach((_,fi)=>lk('FM-'+fi,TASKS[fi%TASKS.length],'MITIGATED_BY'));
-  if(pi<6){ const wo='WO-'+(20480+pi); add(wo,'WorkOrder',wo); lk(wo,p,'TARGETS'); lk(wo,TASKS[pi%TASKS.length],'EXECUTES'); lk(pi%2?'TECH-JL':'TECH-AR',wo,'ASSIGNED_TO'); }
-});
-const adj = id => L.filter(l=>l.s===id||l.t===id).map(l=> l.s===id?l.t:l.s);
-const degHidden = id => adj(id).filter(n=>!graph.hasNode(n)).length;
-
-/* ====================== SIGMA + FORCEATLAS2 ====================== */
-let graph, renderer, simTimer=null, sel=null;
-const V = {}; /* node velocities for the force sim */
-function libsReady(){ return window.graphology && window.Sigma; }
-
-function boot(){
-  if(!libsReady()){ document.getElementById('gxErr').classList.add('show'); document.getElementById('gxCount').textContent='offline'; return; }
-  graph = new window.graphology.Graph();
-  renderer = new window.Sigma(graph, document.getElementById('gx-sigma'), {
-    renderLabels:true, labelFont:'Roboto', labelSize:12, labelWeight:'500',
-    labelColor:{color:'#0A0B0D'}, defaultEdgeColor:'#C9CDD3', zIndex:true, minCameraRatio:0.05, maxCameraRatio:8,
-  });
-  renderer.on('clickNode', ({node})=>selectNode(node));
-  renderer.on('clickStage', ()=>closeDetail());
-  buildLegend();
-  seed();
-}
-
-function addNode(id, near){
-  if(graph.hasNode(id)) return;
-  const n=N[id], t=TYPE[n.type];
-  const ox = near?graph.getNodeAttribute(near,'x'):0, oy = near?graph.getNodeAttribute(near,'y'):0;
-  graph.addNode(id,{ x:ox+(Math.random()-.5)*90, y:oy+(Math.random()-.5)*90, size:t.size, color:t.color,
-    label:(n.type==='Reading'?'':n.label), ntype:n.type });
-  V[id]={vx:0,vy:0};
-}
-function syncEdges(){ L.forEach(l=>{ if(graph.hasNode(l.s)&&graph.hasNode(l.t)&&l.s!==l.t&&!graph.hasEdge(l.s,l.t)){ try{ graph.addEdgeWithKey(l.s+'->'+l.t,l.s,l.t,{label:l.rel,size:1.2,type:'line'}); }catch(e){} } }); }
-function refreshCount(){ document.getElementById('gxCount').textContent = graph.order+' node'+(graph.order!==1?'s':'')+' · '+graph.size+' edge'+(graph.size!==1?'s':'')+' · live layout'; }
-
-/* force-directed layout: Sigma renders (WebGL), this integrates positions into the
-   graphology model each frame, then cools down. Same physics as the no-dep version. */
-function runLayout(ms=2200){
-  if(simTimer) cancelAnimationFrame(simTimer);
-  const end = performance.now()+ms;
-  (function loop(){
-    const ids=graph.nodes(), n=ids.length;
-    const X=new Array(n), Y=new Array(n), FX=new Array(n).fill(0), FY=new Array(n).fill(0), idx={};
-    for(let i=0;i<n;i++){ idx[ids[i]]=i; X[i]=graph.getNodeAttribute(ids[i],'x'); Y[i]=graph.getNodeAttribute(ids[i],'y'); }
-    // repulsion
-    for(let i=0;i<n;i++) for(let j=i+1;j<n;j++){
-      let dx=X[i]-X[j], dy=Y[i]-Y[j], d2=dx*dx+dy*dy||1, d=Math.sqrt(d2); const f=2600/d2, ux=dx/d, uy=dy/d;
-      FX[i]+=ux*f; FY[i]+=uy*f; FX[j]-=ux*f; FY[j]-=uy*f;
-    }
-    // springs
-    graph.forEachEdge((e,a,s,t)=>{ const i=idx[s], j=idx[t]; let dx=X[j]-X[i], dy=Y[j]-Y[i], d=Math.sqrt(dx*dx+dy*dy)||1;
-      const f=(d-78)*0.035, ux=dx/d, uy=dy/d; FX[i]+=ux*f; FY[i]+=uy*f; FX[j]-=ux*f; FY[j]-=uy*f; });
-    // gravity toward origin
-    for(let i=0;i<n;i++){ FX[i]+= -X[i]*0.012; FY[i]+= -Y[i]*0.012; }
-    // integrate + write back
-    for(let i=0;i<n;i++){ const id=ids[i]; const v=V[id]||(V[id]={vx:0,vy:0});
-      v.vx=(v.vx+FX[i])*0.86; v.vy=(v.vy+FY[i])*0.86;
-      graph.setNodeAttribute(id,'x', X[i]+v.vx*0.5); graph.setNodeAttribute(id,'y', Y[i]+v.vy*0.5); }
-    if(performance.now()<end) simTimer=requestAnimationFrame(loop);
-  })();
-}
-
-/* ====================== ACTIONS ====================== */
-function seed(){
-  graph.clear(); sel=null; closeDetail();
-  addNode('SITE-NORTH'); adj('SITE-NORTH').forEach(nb=>addNode(nb,'SITE-NORTH')); syncEdges();
-  refreshCount(); runLayout(2200); setTimeout(fit,700);
-}
-function expand(id){ adj(id).forEach(nb=>addNode(nb,id)); syncEdges(); refreshCount(); runLayout(2000); }
-function expandSelected(){ if(sel) expand(sel); }
-function expandAll(){ Object.keys(N).forEach(id=>addNode(id)); syncEdges(); refreshCount(); runLayout(3200); setTimeout(fit,1400); }
-
-function fit(){ renderer && renderer.getCamera().animatedReset({duration:500}); }
-function zoomBy(dir){ const cam=renderer.getCamera(); dir==='in'?cam.animatedZoom(1.5):cam.animatedUnzoom(1.5); }
-
-function selectNode(id){
-  sel=id; const n=N[id], t=TYPE[n.type];
-  document.getElementById('gxdIc').style.background=t.color;
-  document.getElementById('gxdIc').innerHTML=`<i class="ph ${t.icon}"></i>`;
-  document.getElementById('gxdKind').textContent=n.type;
-  document.getElementById('gxdName').textContent=n.label;
-  document.getElementById('gxdProps').innerHTML=Object.entries({id, ...PROPS[n.type]}).map(([k,v])=>`<span class="k">${k}</span><span class="v">${v}</span>`).join('');
-  document.getElementById('gxdProv').textContent=`source     neo4j\nnode_id    ${n.type[0].toLowerCase()}:${1000+Object.keys(N).indexOf(id)}\ntemplate   assets_overdue_for_task@3\ngraph_ver  2026-06-04T09:00Z`;
-  const hid=degHidden(id), btn=document.getElementById('gxdExpand');
-  btn.style.display=hid>0?'inline-flex':'none'; btn.innerHTML=`<i class="ph ph-graph"></i> Expand ${hid} neighbour${hid!==1?'s':''}`;
-  document.getElementById('gxDetail').classList.add('open');
-}
-function closeDetail(){ document.getElementById('gxDetail').classList.remove('open'); sel=null; }
-
-let query='';
-function searchNodes(q){ query=q.trim().toLowerCase();
-  renderer.setSetting('nodeReducer', (node,data)=>{ if(!query) return data;
-    const n=N[node]; const hit=node.toLowerCase().includes(query)||(n&&n.label.toLowerCase().includes(query));
-    return hit?data:{...data, color:'#E4E5E8', label:'', zIndex:0}; });
-}
-function buildLegend(){ document.getElementById('gxLegend').innerHTML=Object.entries(TYPE).filter(([k])=>k!=='Reading'&&k!=='AssetClass')
-  .map(([k,t])=>`<span class="lk"><span class="sw" style="background:${t.color}"></span>${k}</span>`).join(''); }
-
-window.addEventListener('load', boot);
-</script>
+<script src="assets/graph-explorer.bundle.js"></script>
 </body>
 </html>
