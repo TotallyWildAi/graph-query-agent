@@ -9,9 +9,11 @@ front-end for a controlled agent that turns plain-English requests into reviewed
 Cypher queries over a Neo4j knowledge graph plus registered tools, where every returned value is
 traceable to the query, node IDs, and tool call that produced it.
 
-The deliverables are self-contained `.html` files plus a shared CSS design system. There is **no
-backend and no database** — all data is illustrative and baked into the screens. The actual service
-described by the design lives elsewhere; `docs/orchestration-agent-spec.md` is its spec.
+The deliverables are self-contained `.html` files plus a shared CSS design system. The screens have
+**no backend** — all data in them is illustrative and baked in. The actual service described by the
+design is specced in `docs/orchestration-agent-spec.md`; a first **backend infrastructure scaffold**
+(Neo4j + Postgres + a minimal FastAPI core) now lives under `backend/` and `infra/` — see
+`docs/backend-infrastructure.md`. The design artifacts do not depend on it.
 
 The one build artifact is `assets/graph-explorer.bundle.js` (the graph engine for the Sigma
 explorer), produced by a small esbuild project in `tools/graph-explorer/`. **The bundle is
@@ -68,7 +70,7 @@ lives under a root `.oc` element that defines the status/accent aliases.
   editable params → step tracker. Includes the **write-approval gate + modal** (Write-action
   scenario) and the low-confidence clarification path (scenario toggle in the top bar).
 - `Results - Lineage.html`, `Trace - Audit.html`, `Clarification.html`, `Intent catalogue.html`,
-  `Tool registry.html`, `Graph schema.html` — the supporting screens.
+  `Tool registry.html`, `Graph schema.html`, `History.html` (run log + replay) — the supporting screens.
 - `Graph explorer.html` — live instance graph, self-contained SVG force layout (no dependencies).
 - `Graph explorer - Sigma.html` — same UX rendered via Sigma.js (WebGL) + ForceAtlas2, loading
   `assets/graph-explorer.bundle.js` (built from `tools/graph-explorer/`).
