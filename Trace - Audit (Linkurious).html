@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Orchestration Console — Trace / Audit</title>
+<link rel="stylesheet" href="assets/linkurious-system.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<style>
+  html,body{ height:100%; }
+  body{ margin:0; }
+
+  .oc-seg{ display:inline-flex; border:1.5px solid var(--ink); border-radius: var(--r-sm); overflow:hidden; flex:none; }
+  .oc-seg button{ font-family: var(--font-mono); font-size:11px; letter-spacing:.04em; text-transform:uppercase; padding:6px 12px; border:none; background: var(--card); color: var(--ink-soft); cursor:pointer; }
+  .oc-seg button+button{ border-left:1.5px solid var(--ink); }
+  .oc-seg button.on{ background: var(--ink); color: var(--card); }
+
+  /* audit header */
+  .aud-head{ padding:18px 20px; }
+  .aud-head .req{ font-size:18px; font-weight:600; letter-spacing:-.01em; }
+  .aud-head .metarow{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:12px; }
+
+  /* timeline rows reuse .oc-steps / .oc-step from console-system */
+  .oc-step.is-sel > .oc-step-head{ background: var(--accent-cyan-soft); }
+  .oc-step .oc-step-head .badges{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .oc-step .mk.err{ border-color: var(--err); color: var(--err); }
+  .oc-step .mk.write{ border-color: var(--write); color: var(--write); }
+  .oc-step .mk.halt{ border-color: var(--ink-faint); color: var(--ink-faint); border-style:dashed; }
+
+  /* error / write hatching for step rows */
+  .oc-step.err-step .oc-step-head{ background: var(--err-soft); border-radius: var(--r-sm); }
+  .oc-step.write-step .oc-step-head{ background: var(--write-soft); border-radius: var(--r-sm); }
+
+  /* attempts table for the error inspector */
+  .att{ width:100%; border-collapse:collapse; font-family: var(--font-mono); font-size:11.5px; }
+  .att th{ text-align:left; color: var(--ink-faint); font-weight:500; padding:6px 10px; border-bottom:1.5px solid var(--ink-line); letter-spacing:.04em; }
+  .att td{ padding:6px 10px; border-bottom:1px solid var(--ink-line); }
+  .att tr:last-child td{ border-bottom:none; }
+  .att .fail{ color: var(--err); }
+
+  .ins-banner{ display:flex; align-items:center; gap:10px; padding:12px 14px; border:1.5px solid; border-radius: var(--r-sm); font-size:13px; margin-bottom:18px; }
+  .ins-banner.read{ border-color: var(--ink); background: var(--card); }
+  .ins-banner.err{ border-color: var(--err); background: var(--err-soft); }
+  .ins-banner.write{ border-color: var(--write); background: var(--write-soft); }
+  .ins-banner .ic{ font-size:20px; }
+  .ins-banner.read .ic{ color: var(--ink); }
+  .ins-banner.err .ic{ color: var(--err); }
+  .ins-banner.write .ic{ color: var(--write-ink); }
+  .ins-banner .lbl{ font-family: var(--font-mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase; color: var(--ink-faint); }
+  .ins-banner .ttl{ font-weight:600; }
+
+  .ins-sec{ margin-bottom:18px; }
+  .lin-record{ font-family: var(--font-mono); font-size:12px; line-height:1.7; background: var(--card-sunk); border:1.5px solid var(--ink-line); border-radius: var(--r-sm); padding:14px 16px; }
+  .lin-record .row{ display:grid; grid-template-columns:130px 1fr; gap:4px 12px; }
+  .lin-record .row + .row{ margin-top:3px; }
+  .lin-record .k{ color: var(--ink-faint); }
+  .lin-record .v{ color: var(--ink); }
+  .lin-record .v.accent{ color: var(--accent); }
+  .lin-record .v.tool{ color: var(--write-ink); }
+  .lin-record .v.err{ color: var(--err); }
+  .nodeids{ display:inline-flex; gap:6px; flex-wrap:wrap; }
+  .nodeids code{ font-family: var(--font-mono); font-size:11px; background: var(--card); border:1.5px solid var(--ink-line); border-radius:4px; padding:2px 7px; color: var(--ink); }
+  .twocol{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .approval{ border:1.5px dashed var(--write); background: var(--write-soft); border-radius: var(--r-sm); padding:12px 14px; display:flex; gap:10px; align-items:flex-start; }
+  .approval i{ color: var(--write-ink); font-size:18px; margin-top:1px; }
+</style>
+</head>
+<body>
+<div class="oc">
+  <div class="oc-app">
+
+    <!-- ===================== LEFT RAIL ===================== -->
+    <aside class="oc-rail">
+      <div class="oc-brand"><img src="assets/tw-stamp-light.svg" alt=""><div class="wm">Console<small>orchestration</small></div></div>
+      <div class="oc-navgrp">Workspace</div>
+      <a class="oc-nav" href="Console - Ask.html" style="text-decoration:none;"><i class="ph ph-terminal-window"></i> Ask</a>
+      <a class="oc-nav" href="Results - Lineage.html" style="text-decoration:none;"><i class="ph ph-table"></i> Results</a>
+      <div class="oc-nav on"><i class="ph ph-tree-structure"></i> Trace</div>
+      <div class="oc-nav"><i class="ph ph-clock-counter-clockwise"></i> History</div>
+      <div class="oc-navgrp">Reference</div>
+      <a class="oc-nav" href="Intent catalogue.html" style="text-decoration:none;"><i class="ph ph-list-checks"></i> Intent catalogue</a>
+      <a class="oc-nav" href="Tool registry.html" style="text-decoration:none;"><i class="ph ph-plugs"></i> Tool registry</a>
+      <a class="oc-nav" href="Graph schema.html" style="text-decoration:none;"><i class="ph ph-graph"></i> Graph schema</a>
+      <div class="oc-rail-foot">Every request keeps a complete, replayable audit record.</div>
+    </aside>
+
+    <!-- ===================== MAIN ===================== -->
+    <div class="oc-main">
+
+      <!-- top bar -->
+      <div class="oc-top">
+        <a class="oc-link" href="Results - Lineage.html" style="font-size:12px;"><i class="ph ph-arrow-left"></i> Back to Results</a>
+        <span class="crumb">/ <b>Trace</b></span>
+        <span class="oc-seg" role="group" aria-label="Trace scenario">
+          <button id="segOk" class="on" onclick="setScenario('ok')">Read run</button>
+          <button id="segErr" onclick="setScenario('err')">Write run · failed</button>
+        </span>
+        <span class="oc-spacer"></span>
+        <span class="oc-seg" role="group" aria-label="Density">
+          <button id="segSum" onclick="setDensity('summary')">Summary</button>
+          <button id="segExp" class="on" onclick="setDensity('expanded')">Expanded</button>
+        </span>
+      </div>
+
+      <!-- master-detail split -->
+      <div class="oc-split">
+
+        <!-- ---------- WORK PANE (left) : audit header + timeline ---------- -->
+        <div class="oc-work">
+
+          <!-- audit header -->
+          <div class="oc-card aud-head">
+            <div style="display:flex; align-items:flex-start; gap:14px;">
+              <div style="flex:1; min-width:0;">
+                <div class="req" id="reqText">"Which pumps at the North plant are overdue for lubrication?"</div>
+                <div class="metarow" id="metaRow">
+                  <span class="oc-pill read" id="runKind"><span class="dot"></span>read</span>
+                  <span class="oc-intent-name" id="intentName" style="font-size:13px;">assets_overdue_for_task</span>
+                  <span class="oc-conf" style="gap:7px;"><span class="track" style="width:64px;"><span class="fill" id="confFill" style="width:92%;"></span></span><span class="num" id="confNum">0.92</span></span>
+                </div>
+              </div>
+              <span class="oc-btn sm" onclick="replay()"><i class="ph ph-arrow-counter-clockwise"></i> Replay</span>
+            </div>
+            <div class="metarow" style="margin-top:14px;">
+              <span class="oc-meta">request_id <b id="reqId">req_7f3a9c21</b></span>
+              <span class="oc-meta">graph_version <b>2026-06-04T09:00Z</b></span>
+              <span class="oc-meta">total <b id="totalDur">0.67 s</b></span>
+              <span class="oc-pill" id="outcome" style="border-color:var(--read); color:var(--read-ink); background:var(--read-soft);"><span class="dot"></span>completed</span>
+            </div>
+            <div class="oc-sub" style="font-size:11.5px; margin-top:10px; display:flex; align-items:center; gap:7px;">
+              <i class="ph ph-arrow-counter-clockwise" style="color:var(--ink-soft);"></i>
+              Replay is deterministic — re-runs the same templates against the pinned graph_version, producing identical results under a new request_id.
+            </div>
+          </div>
+
+          <!-- timeline -->
+          <div>
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
+              <span class="oc-eyebrow" style="margin:0;">Execution timeline</span>
+              <span class="oc-sub" style="font-size:11.5px;">Select a step to inspect its full record</span>
+            </div>
+            <div class="oc-steps" id="timeline"><!-- rendered by JS --></div>
+          </div>
+
+        </div>
+
+        <!-- ---------- EVIDENCE PANE (right) : step inspector ---------- -->
+        <div class="oc-evidence">
+          <div class="oc-ev-head">
+            <i class="ph ph-magnifying-glass-plus" style="font-size:18px;"></i>
+            <span class="oc-ev-title">Step inspector</span>
+            <span class="oc-spacer"></span>
+            <span class="oc-pill dim" id="insTag" style="display:none;"></span>
+          </div>
+          <div class="oc-ev-body">
+            <div class="oc-empty" id="insEmpty">
+              <div class="glyph"><i class="ph ph-cursor-click"></i></div>
+              <div class="ttl">Select a step to inspect</div>
+              <div class="oc-sub" style="max-width:280px;">Each step exposes its full record — bound query &amp; node IDs, tool I/O, attempts, and read/write encoding.</div>
+            </div>
+            <div id="insContent" style="display:none;"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  /* ---------- data ---------- */
+  const SCN = {
+    ok: {
+      req:'"Which pumps at the North plant are overdue for lubrication?"',
+      intent:'assets_overdue_for_task', kind:'read', conf:'0.92', confW:'92%',
+      reqId:'req_7f3a9c21', total:'0.67 s', outcome:{t:'completed', cls:'ok'},
+      steps:[
+        {n:1, title:'Classify intent', sub:'router · temperature 0', ts:'09:14:20.804', dur:'40 ms', state:'done'},
+        {n:2, title:'Extract &amp; validate parameters', sub:'2 / 2 valid', ts:'09:14:20.844', dur:'12 ms', state:'done'},
+        {n:3, title:'Run Cypher template <span class="mono">assets_overdue_for_task@3</span>', sub:'3 rows', ts:'09:14:20.856', dur:'9 ms', state:'done', badge:'read'},
+        {n:4, title:'Enrich via tool <span class="mono">snowflake_runtime_hours@2.1</span>', sub:'Snowflake · 1 attempt', ts:'09:14:20.865', dur:'612 ms', state:'done', badge:'read'},
+        {n:5, title:'Assemble response &amp; attach lineage', sub:'7 fields stamped', ts:'09:14:21.477', dur:'9 ms', state:'done'}
+      ]
+    },
+    err: {
+      req:'"Raise a lubrication work order for Pump P-101."',
+      intent:'create_work_order', kind:'write', conf:'0.88', confW:'88%',
+      reqId:'req_8b2e10f4', total:'24.3 s', outcome:{t:'failed · halted', cls:'err'},
+      steps:[
+        {n:1, title:'Classify intent', sub:'router · temperature 0', ts:'11:02:09.110', dur:'38 ms', state:'done'},
+        {n:2, title:'Extract &amp; validate parameters', sub:'3 / 3 valid', ts:'11:02:09.148', dur:'10 ms', state:'done'},
+        {n:3, title:'Enrich via tool <span class="mono">sap_asset_master@1.0</span>', sub:'timeout · 3 attempts · breaker open', ts:'11:02:09.158', dur:'24 008 ms', state:'err', badge:'read'},
+        {n:4, title:'Create work order <span class="mono">cmms_create_work_order@1.2.0</span>', sub:'not executed — run halted', ts:'—', dur:'—', state:'halt', badge:'write'},
+        {n:5, title:'Assemble error response &amp; partial lineage', sub:'normalized error attached', ts:'11:02:33.166', dur:'7 ms', state:'done'}
+      ]
+    }
+  };
+
+  /* ---------- inspector records ---------- */
+  function record(scn, n){
+    const k = scn+'-'+n;
+    const R = {
+      'ok-1':()=>insReadBanner('Classify intent','router')+sec('Selected from registered intents',
+        code(`selected   assets_overdue_for_task   <span class="pm">0.92</span>
+candidate  assets_by_site            0.31
+candidate  asset_health_summary      0.18`))+stamp('09:14:20.804','40 ms'),
+      'ok-2':()=>insReadBanner('Extract &amp; validate parameters','typed · allow-list checked')+sec('Bound parameters',
+        rec([['site_id','"SITE-NORTH" · string · required ✓'],['task_code','"LUBE-01" · string · required ✓']]))+stamp('09:14:20.844','12 ms'),
+      'ok-3':()=>insBanner('read','ph-graph','Neo4j knowledge graph','step 3 · read-only')+
+        sec('Bound query · assets_overdue_for_task@3',
+        code(`<span class="kw">MATCH</span> (s:Site {id: <span class="pm">$site_id</span>})-[:CONTAINS]->(a:Asset)
+<span class="kw">MATCH</span> (a)&lt;-[:TARGETS]-(wo:WorkOrder)-[:EXECUTES]->(t:MaintenanceTask {code: <span class="pm">$task_code</span>})
+<span class="kw">WHERE</span> wo.due_date &lt; date() <span class="kw">AND</span> wo.status &lt;&gt; <span class="str">'CLOSED'</span>
+<span class="kw">RETURN</span> a.id, a.name, wo.due_date, wo.status <span class="kw">ORDER BY</span> wo.due_date`))+
+        sec('Result · 3 rows · node IDs touched','<div class="nodeids"><code>a:1042</code><code>a:1048</code><code>a:1055</code></div>')+
+        stamp('09:14:20.856','9 ms'),
+      'ok-4':()=>insBanner('write','ph-snowflake','Snowflake · external tool','step 4 · read-only')+
+        sec('Tool call · snowflake_runtime_hours@2.1 · 612 ms · 1 attempt',
+        `<div class="twocol"><div><div class="oc-detail-label" style="margin-bottom:5px;">INPUT</div>${code(`{ "asset_ids":
+  ["P-101","P-104","P-110"] }`)}</div><div><div class="oc-detail-label" style="margin-bottom:5px;">OUTPUT</div>${code(`{ "P-101": 7420,
+  "P-104": 6980,
+  "P-110": 3110 }`)}</div></div>`)+stamp('09:14:20.865','612 ms'),
+      'ok-5':()=>insReadBanner('Assemble response &amp; attach lineage','provenance stamped per field')+
+        sec('Per-field provenance · example',
+        rec([['field','asset → "Pump P-101"'],['source','neo4j'],['produced_by','assets_overdue_for_task@3 · [a:1042]'],['runtime','snowflake_runtime_hours@2.1']]))+stamp('09:14:21.477','9 ms'),
+
+      'err-1':()=>insReadBanner('Classify intent','router')+sec('Selected from registered intents',
+        code(`selected   create_work_order   <span class="pm">0.88</span>   <span style="color:var(--write-ink);">[write]</span>
+candidate  log_inspection      0.22`))+stamp('11:02:09.110','38 ms'),
+      'err-2':()=>insReadBanner('Extract &amp; validate parameters','typed · allow-list checked')+sec('Bound parameters',
+        rec([['asset_id','"P-101" · string · required ✓'],['task_code','"LUBE-01" · string · required ✓'],['priority','"HIGH" · enum · required ✓']]))+stamp('11:02:09.148','10 ms'),
+      'err-3':()=>insBanner('err','ph-warning','sap_asset_master@1.0 timed out','step 3 · read-only · circuit-breaker OPEN')+
+        sec('Retry attempts',
+        `<table class="att"><thead><tr><th>#</th><th>started</th><th>waited</th><th>result</th></tr></thead><tbody>
+         <tr><td>1</td><td>11:02:09.158</td><td>8 000 ms</td><td class="fail">timeout</td></tr>
+         <tr><td>2</td><td>11:02:17.160</td><td>8 000 ms</td><td class="fail">timeout</td></tr>
+         <tr><td>3</td><td>11:02:25.162</td><td>8 000 ms</td><td class="fail">timeout</td></tr>
+         </tbody></table>`)+
+        sec('Normalized error',
+        rec([['code','TOOL_TIMEOUT'],['source','SAP'],['attempts','3 · backoff'],['breaker','open · reopen in 30 s'],['fatal','true · run halted']], 'err'))+
+        stamp('11:02:09.158','24 008 ms'),
+      'err-4':()=>insBanner('write','ph-warning-octagon','cmms_create_work_order@1.2.0','step 4 · write · side-effect · NOT EXECUTED')+
+        `<div class="approval"><i class="ph ph-shield-check"></i><div><div style="font-weight:600; font-size:13px;">Write step — gated, and never reached</div><div class="oc-sub" style="margin-top:4px;">The run halted at step 3, so this side-effecting call did not execute. Had it run, it would have required explicit approval before any change.</div></div></div>`+
+        sec('Manifest flags',
+        rec([['side_effect','true'],['idempotent','false · idempotency-key required'],['approval','required'],['status','not executed (upstream failure)']], 'write'))+
+        `<div class="lin-foot"><span class="oc-link" onclick="alert('→ Tool registry → cmms_create_work_order manifest (built later in the set).')"><i class="ph ph-plugs"></i> Tool manifest</span></div>`,
+      'err-5':()=>insReadBanner('Assemble error response &amp; partial lineage','what succeeded is still traceable')+
+        sec('Outcome',
+        rec([['outcome','failed'],['halted_at','step 3'],['partial_lineage','steps 1–2 stamped'],['request_id','req_8b2e10f4']], 'err'))+stamp('11:02:33.166','7 ms')
+    };
+    return (R[k] || (()=>'<div class="oc-sub">No record.</div>'))();
+  }
+
+  /* ---------- inspector html helpers ---------- */
+  function sec(label, body){ return `<div class="ins-sec"><div class="oc-detail-label" style="margin-bottom:8px;">${label}</div>${body}</div>`; }
+  function code(s){ return `<div class="oc-code">${s}</div>`; }
+  function rec(rows, vcls){ return `<div class="lin-record">`+rows.map(([k,v])=>`<div class="row"><span class="k">${k}</span><span class="v ${vcls||''}">${v}</span></div>`).join('')+`</div>`; }
+  function stamp(ts,dur){ return `<div class="lin-foot"><span class="oc-sub" style="font-family:var(--font-mono); font-size:11.5px;">timestamp ${ts} · ${dur}</span></div>`; }
+  function insBanner(cls, icon, sys, meta){ return `<div class="ins-banner ${cls}"><i class="ph ${icon} ic"></i><div><div class="lbl">${meta}</div><div class="ttl">${sys}</div></div><span class="oc-spacer"></span>${cls==='write'?'<span class="oc-wo">write</span>':'<span class="oc-ro">read-only</span>'}</div>`; }
+  function insReadBanner(title, meta){ return `<div class="ins-banner read"><i class="ph ph-gear ic"></i><div><div class="lbl">${meta}</div><div class="ttl">${title.replace(/<[^>]+>/g,'')}</div></div><span class="oc-spacer"></span><span class="oc-ro">internal</span></div>`; }
+
+  /* ---------- state ---------- */
+  let scenario='ok', density='expanded', selStep=null;
+
+  function markerFor(s){
+    if(s.state==='err') return '<span class="mk err"><i class="ph ph-x"></i></span>';
+    if(s.state==='halt') return '<span class="mk halt"><i class="ph ph-minus"></i></span>';
+    if(s.badge==='write') return '<span class="mk write done"><i class="ph ph-check"></i></span>';
+    return '<span class="mk done"><i class="ph ph-check"></i></span>';
+  }
+  function badgeFor(s){
+    if(s.state==='err') return '<span class="oc-pill err" style="font-size:9px; padding:2px 7px;"><span class="dot"></span>error</span>';
+    if(s.badge==='write') return '<span class="oc-wo">write · side-effect</span>';
+    if(s.badge==='read') return '<span class="oc-ro">read-only</span>';
+    return '';
+  }
+
+  function renderTimeline(){
+    const d = SCN[scenario];
+    const tl = document.getElementById('timeline');
+    tl.innerHTML = d.steps.map(s=>{
+      const cls = (s.state==='err'?'err-step ':'') + (s.state==='halt'||s.badge==='write'&&scenario==='err'?'':'');
+      const stepCls = s.state==='err' ? 'err-step' : (s.badge==='write' && scenario==='err' ? 'write-step' : '');
+      return `<div class="oc-step has-detail ${stepCls} ${s.state==='halt'?'':''}" data-step="${s.n}">
+        ${markerFor(s)}
+        <div class="oc-step-head" onclick="selectStep(${s.n})">
+          <div class="txt">
+            <div class="t">${s.title} <span class="badges">${badgeFor(s)}</span></div>
+            <div class="d">${s.sub} · ${s.ts==='—'?'not run':s.ts} · ${s.dur}</div>
+          </div>
+          <i class="ph ph-caret-right caret"></i>
+        </div>
+        <div class="oc-step-detail" data-detail="${s.n}"></div>
+      </div>`;
+    }).join('');
+    applyDensity();
+    // auto-select the salient step: the error step in err scenario, else step 3
+    const auto = scenario==='err' ? 3 : 3;
+    selectStep(auto);
+  }
+
+  function selectStep(n){
+    selStep = n;
+    document.querySelectorAll('#timeline .oc-step').forEach(el=>el.classList.toggle('is-sel', el.dataset.step==String(n)));
+    // inspector
+    document.getElementById('insEmpty').style.display='none';
+    const c = document.getElementById('insContent');
+    c.style.display='block';
+    c.innerHTML = record(scenario, n);
+    const tag = document.getElementById('insTag');
+    tag.style.display='inline-flex';
+    const s = SCN[scenario].steps.find(x=>x.n==n);
+    let cls='dim', txt='step '+n;
+    if(s.state==='err'){ cls='err'; txt='step '+n+' · error'; }
+    else if(s.badge==='write'){ cls='write'; txt='step '+n+' · write'; }
+    tag.className='oc-pill '+cls;
+    tag.innerHTML='<span class="dot"></span>'+txt;
+  }
+
+  function applyDensity(){
+    document.querySelectorAll('#timeline .oc-step').forEach(el=>{
+      const n = el.dataset.step;
+      const det = el.querySelector('.oc-step-detail');
+      if(density==='expanded'){
+        if(!det.dataset.filled){ det.innerHTML = record(scenario, Number(n)); det.dataset.filled='1'; }
+        el.classList.add('is-open');
+      } else {
+        el.classList.remove('is-open');
+      }
+    });
+  }
+
+  /* ---------- controls ---------- */
+  function setScenario(s){
+    scenario=s;
+    document.getElementById('segOk').classList.toggle('on', s==='ok');
+    document.getElementById('segErr').classList.toggle('on', s==='err');
+    const d = SCN[s];
+    document.getElementById('reqText').innerHTML = d.req;
+    document.getElementById('intentName').textContent = d.intent;
+    document.getElementById('reqId').textContent = d.reqId;
+    document.getElementById('totalDur').textContent = d.total;
+    document.getElementById('confNum').textContent = d.conf;
+    document.getElementById('confFill').style.width = d.confW;
+    const rk = document.getElementById('runKind');
+    rk.className = 'oc-pill ' + (d.kind==='write'?'write':'read');
+    rk.innerHTML = '<span class="dot"></span>'+d.kind;
+    const oc = document.getElementById('outcome');
+    if(d.outcome.cls==='err'){ oc.style.cssText='border-color:var(--err); color:var(--err); background:var(--err-soft);'; oc.innerHTML='<span class="dot"></span>'+d.outcome.t; }
+    else { oc.style.cssText='border-color:var(--read); color:var(--read-ink); background:var(--read-soft);'; oc.innerHTML='<span class="dot"></span>'+d.outcome.t; }
+    renderTimeline();
+  }
+  function setDensity(d){
+    density=d;
+    document.getElementById('segSum').classList.toggle('on', d==='summary');
+    document.getElementById('segExp').classList.toggle('on', d==='expanded');
+    applyDensity();
+  }
+  function toggleStep(n){ /* used by caret via head click already calling selectStep; expand toggles inline */ }
+
+  function replay(){ alert('Replay → deterministic re-run against graph_version 2026-06-04T09:00Z. Same templates & params, fresh request_id.'); }
+
+  // caret click also expands/collapses inline detail in summary mode
+  document.addEventListener('click', e=>{
+    const head = e.target.closest('.oc-step-head');
+    if(head && density==='summary'){
+      const step = head.parentElement;
+      const det = step.querySelector('.oc-step-detail');
+      if(!det.dataset.filled){ det.innerHTML = record(scenario, Number(step.dataset.step)); det.dataset.filled='1'; }
+      step.classList.toggle('is-open');
+    }
+  });
+
+  /* init */
+  setScenario('ok');
+</script>
+</body>
+</html>

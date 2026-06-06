@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Orchestration Console — Tool registry</title>
+<link rel="stylesheet" href="assets/linkurious-system.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<style>
+  html,body{ height:100%; }
+  body{ margin:0; }
+
+  .searchbar{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .search{ display:flex; align-items:center; gap:9px; border:1.5px solid var(--ink); border-radius: var(--r-sm); padding:8px 12px; background: var(--card); flex:1; min-width:220px; box-shadow: var(--shadow-press); }
+  .search input{ border:none; outline:none; background:transparent; font:inherit; font-size:13px; color: var(--ink); flex:1; }
+  .search i{ color: var(--ink-faint); }
+  .filt{ display:inline-flex; border:1.5px solid var(--ink); border-radius: var(--r-sm); overflow:hidden; flex:none; }
+  .filt button{ font-family: var(--font-mono); font-size:11px; letter-spacing:.04em; text-transform:uppercase; padding:8px 12px; border:none; background: var(--card); color: var(--ink-soft); cursor:pointer; }
+  .filt button+button{ border-left:1.5px solid var(--ink); }
+  .filt button.on{ background: var(--ink); color: var(--card); }
+
+  /* tool list rows */
+  .tool-row{ width:100%; text-align:left; border:1.5px solid var(--ink-line); border-radius: var(--r-md); background: var(--card); padding:14px 16px; cursor:pointer; display:flex; flex-direction:column; gap:8px; transition: background var(--dur-fast) var(--ease); }
+  .tool-row:hover{ background: rgba(27,30,44,.03); }
+  .tool-row.sel{ border:1.5px solid var(--ink); box-shadow: var(--shadow-rest); }
+  .tool-row.write{ background: var(--write-soft); border-color: var(--write); }
+  .tool-row.degraded{ border-color: var(--marker); }
+  .tool-row .top{ display:flex; align-items:center; gap:10px; }
+  .tool-row .nm{ font-family: var(--font-mono); font-size:13.5px; font-weight:500; }
+  .tool-row .src{ display:inline-flex; align-items:center; gap:6px; font-size:11.5px; color: var(--ink-soft); }
+  .tool-row .meta{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-family: var(--font-mono); font-size:11px; color: var(--ink-faint); }
+
+  /* health */
+  .health{ display:inline-flex; align-items:center; gap:6px; font-family: var(--font-mono); font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; padding:3px 9px; border-radius:999px; border:1.5px solid; }
+  .health.ok{ color: var(--read-ink); border-color: var(--read); background: var(--read-soft); }
+  .health.bad{ color: var(--marker); border-color: var(--marker); background: var(--marker-soft); }
+  .health .d{ width:6px; height:6px; border-radius:50%; background: currentColor; }
+
+  /* detail */
+  .det-head{ display:flex; flex-direction:column; gap:10px; padding-bottom:18px; border-bottom:1.5px solid var(--ink-line); }
+  .det-title{ font-family: var(--font-mono); font-size:17px; font-weight:500; }
+  .det-sec{ margin-top:20px; }
+  .lin-record{ font-family: var(--font-mono); font-size:12px; line-height:1.7; background: var(--card-sunk); border:1.5px solid var(--ink-line); border-radius: var(--r-sm); padding:14px 16px; }
+  .lin-record .row{ display:grid; grid-template-columns:128px 1fr; gap:4px 12px; }
+  .lin-record .row + .row{ margin-top:3px; }
+  .lin-record .k{ color: var(--ink-faint); }
+  .lin-record .v{ color: var(--ink); }
+  .lin-record .v.tool{ color: var(--write-ink); }
+  .lin-record .v.ok{ color: var(--read-ink); }
+  .lin-record .v.bad{ color: var(--marker); }
+  .lin-record .v.secret{ color: var(--accent-violet); }
+
+  /* observability metrics */
+  .obs{ display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+  .metric{ border:1.5px solid var(--ink-line); border-radius: var(--r-sm); padding:11px 13px; background: var(--card); }
+  .metric .ml{ font-family: var(--font-mono); font-size:10px; letter-spacing:.06em; text-transform:uppercase; color: var(--ink-faint); }
+  .metric .mv{ font-size:17px; font-weight:600; margin-top:3px; }
+  .metric.bad .mv{ color: var(--marker); }
+  .metric .mv .u{ font-size:11px; color: var(--ink-faint); font-weight:400; }
+
+  .breaker{ border:1.5px solid var(--marker); background: var(--marker-soft); border-radius: var(--r-sm); padding:13px 15px; display:flex; gap:11px; align-items:flex-start; }
+  .breaker i{ color: var(--marker); font-size:20px; margin-top:1px; }
+  .approval{ border:1.5px dashed var(--write); background: var(--write-soft); border-radius: var(--r-sm); padding:13px 15px; display:flex; gap:11px; align-items:flex-start; }
+  .approval i{ color: var(--write-ink); font-size:20px; margin-top:1px; }
+</style>
+</head>
+<body>
+<div class="oc">
+  <div class="oc-app">
+
+    <aside class="oc-rail">
+      <div class="oc-brand"><img src="assets/tw-stamp-light.svg" alt=""><div class="wm">Console<small>orchestration</small></div></div>
+      <div class="oc-navgrp">Workspace</div>
+      <a class="oc-nav" href="Console - Ask.html" style="text-decoration:none;"><i class="ph ph-terminal-window"></i> Ask</a>
+      <a class="oc-nav" href="Results - Lineage.html" style="text-decoration:none;"><i class="ph ph-table"></i> Results</a>
+      <a class="oc-nav" href="Trace - Audit.html" style="text-decoration:none;"><i class="ph ph-tree-structure"></i> Trace</a>
+      <div class="oc-navgrp">Reference</div>
+      <a class="oc-nav" href="Intent catalogue.html" style="text-decoration:none;"><i class="ph ph-list-checks"></i> Intent catalogue</a>
+      <div class="oc-nav on"><i class="ph ph-plugs"></i> Tool registry</div>
+      <a class="oc-nav" href="Graph schema.html" style="text-decoration:none;"><i class="ph ph-graph"></i> Graph schema</a>
+      <div class="oc-rail-foot">Schema-validated plugins. Every tool declares its I/O, auth, and side-effect contract up front.</div>
+    </aside>
+
+    <div class="oc-main">
+
+      <div class="oc-top">
+        <span class="crumb"><b>Tool registry</b></span>
+        <span class="oc-spacer"></span>
+        <span class="oc-meta"><b>4</b> tools · <b>3</b> read · <b>1</b> write</span>
+        <span class="oc-meta"><b>1</b> degraded</span>
+      </div>
+
+      <div class="oc-split">
+
+        <!-- ---------- WORK PANE: tool list ---------- -->
+        <div class="oc-work">
+
+          <div class="searchbar">
+            <div class="search"><i class="ph ph-magnifying-glass"></i><input placeholder="search tools…" oninput="filterList(this.value)"></div>
+            <div class="filt" role="group" aria-label="Filter source">
+              <button class="on" data-f="all" onclick="setFilter('all')">All</button>
+              <button data-f="read" onclick="setFilter('read')">Read</button>
+              <button data-f="write" onclick="setFilter('write')">Write</button>
+            </div>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:12px;" id="list">
+
+            <button class="tool-row sel" data-rw="read" data-tool="snow" onclick="select('snow')">
+              <div class="top"><span class="nm">snowflake_runtime_hours</span><span class="ver" style="font-family:var(--font-mono); font-size:11px; color:var(--ink-faint);">@2.1</span><span class="oc-spacer"></span><span class="health ok"><span class="d"></span>healthy</span></div>
+              <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
+                <span class="src"><i class="ph ph-snowflake"></i> Snowflake</span>
+                <span class="oc-pill read" style="font-size:9px; padding:2px 8px;"><span class="dot"></span>read</span>
+                <span class="meta">runtime · idempotent</span>
+                <span class="oc-spacer"></span><span class="meta">used 2m ago</span>
+              </div>
+            </button>
+
+            <button class="tool-row" data-rw="read" data-tool="sap" onclick="select('sap')">
+              <div class="top"><span class="nm">sap_asset_master</span><span class="ver" style="font-family:var(--font-mono); font-size:11px; color:var(--ink-faint);">@1.0</span><span class="oc-spacer"></span><span class="health ok"><span class="d"></span>healthy</span></div>
+              <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
+                <span class="src"><i class="ph ph-database"></i> SAP</span>
+                <span class="oc-pill read" style="font-size:9px; padding:2px 8px;"><span class="dot"></span>read</span>
+                <span class="meta">asset · idempotent</span>
+                <span class="oc-spacer"></span><span class="meta">used 11m ago</span>
+              </div>
+            </button>
+
+            <button class="tool-row write" data-rw="write" data-tool="cmms" onclick="select('cmms')">
+              <div class="top"><span class="nm">cmms_create_work_order</span><span class="ver" style="font-family:var(--font-mono); font-size:11px; color:var(--ink-faint);">@1.2.0</span><span class="oc-spacer"></span><span class="health ok"><span class="d"></span>healthy</span></div>
+              <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
+                <span class="src"><i class="ph ph-wrench"></i> CMMS</span>
+                <span class="oc-pill write" style="font-size:9px; padding:2px 8px;"><span class="dot"></span>write</span>
+                <span class="meta" style="color:var(--write-ink);">side-effect · non-idempotent</span>
+                <span class="oc-spacer"></span><span class="meta">used 1h ago</span>
+              </div>
+            </button>
+
+            <button class="tool-row degraded" data-rw="read" data-tool="inv" onclick="select('inv')">
+              <div class="top"><span class="nm">sap_inventory_lookup</span><span class="ver" style="font-family:var(--font-mono); font-size:11px; color:var(--ink-faint);">@0.9</span><span class="oc-spacer"></span><span class="health bad"><span class="d"></span>breaker open</span></div>
+              <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
+                <span class="src"><i class="ph ph-database"></i> SAP</span>
+                <span class="oc-pill read" style="font-size:9px; padding:2px 8px;"><span class="dot"></span>read</span>
+                <span class="meta" style="color:var(--marker);">degraded · 100% errors</span>
+                <span class="oc-spacer"></span><span class="meta">failing</span>
+              </div>
+            </button>
+
+          </div>
+        </div>
+
+        <!-- ---------- EVIDENCE PANE: manifest detail ---------- -->
+        <div class="oc-evidence">
+          <div class="oc-ev-head">
+            <i class="ph ph-file-code" style="font-size:18px;"></i>
+            <span class="oc-ev-title">Tool manifest</span>
+            <span class="oc-spacer"></span>
+            <span class="oc-pill dim" id="detTag"><span class="dot"></span>read</span>
+          </div>
+          <div class="oc-ev-body" id="detail"><!-- filled by JS --></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function obs(metrics, breaker){
+    return `<div class="det-sec">
+      <div class="oc-detail-label" style="margin-bottom:8px;">Observability · last 5 min</div>
+      ${breaker || ''}
+      <div class="obs" style="${breaker?'margin-top:10px;':''}">
+        ${metrics.map(m=>`<div class="metric ${m.bad?'bad':''}"><div class="ml">${m.l}</div><div class="mv">${m.v} <span class="u">${m.u||''}</span></div></div>`).join('')}
+      </div>
+    </div>`;
+  }
+
+  const DET = {
+    snow: () => `
+      <div class="det-head">
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+          <span class="det-title">snowflake_runtime_hours</span><span class="oc-pill read"><span class="dot"></span>read</span><span class="oc-meta">@2.1</span><span class="health ok"><span class="d"></span>healthy</span>
+        </div>
+        <div class="oc-sub">Returns cumulative runtime hours per asset, sourced from the Snowflake telemetry warehouse. Read-only and idempotent.</div>
+      </div>
+      <div class="det-sec">
+        <div class="oc-detail-label" style="margin-bottom:8px;">Manifest</div>
+        <div class="lin-record">
+          <div class="row"><span class="k">source</span><span class="v">Snowflake</span></div>
+          <div class="row"><span class="k">tags</span><span class="v">runtime, telemetry, read</span></div>
+          <div class="row"><span class="k">side_effect</span><span class="v ok">false</span></div>
+          <div class="row"><span class="k">idempotent</span><span class="v ok">true</span></div>
+          <div class="row"><span class="k">auth</span><span class="v secret">secret_ref: snowflake/analytics</span></div>
+          <div class="row"><span class="k">timeout_ms</span><span class="v">5000</span></div>
+          <div class="row"><span class="k">retry</span><span class="v">2 · exponential backoff</span></div>
+        </div>
+      </div>
+      <div class="det-sec">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <div><div class="oc-detail-label" style="margin-bottom:6px;">input · JSON Schema</div><div class="oc-code">{
+  "type": "object",
+  "properties": {
+    "asset_ids": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "required": ["asset_ids"]
+}</div></div>
+          <div><div class="oc-detail-label" style="margin-bottom:6px;">output · JSON Schema</div><div class="oc-code">{
+  "type": "object",
+  "additionalProperties": {
+    "type": "number"
+  }
+}</div></div>
+        </div>
+      </div>
+      ${obs([{l:'latency p95',v:'180',u:'ms'},{l:'error rate',v:'0.2',u:'%'},{l:'retries (5m)',v:'1'},{l:'breaker',v:'closed'}])}`,
+
+    sap: () => `
+      <div class="det-head">
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+          <span class="det-title">sap_asset_master</span><span class="oc-pill read"><span class="dot"></span>read</span><span class="oc-meta">@1.0</span><span class="health ok"><span class="d"></span>healthy</span>
+        </div>
+        <div class="oc-sub">Looks up asset master records (make, model, install date) from SAP. Read-only and idempotent.</div>
+      </div>
+      <div class="det-sec">
+        <div class="oc-detail-label" style="margin-bottom:8px;">Manifest</div>
+        <div class="lin-record">
+          <div class="row"><span class="k">source</span><span class="v">SAP</span></div>
+          <div class="row"><span class="k">tags</span><span class="v">asset, master-data, read</span></div>
+          <div class="row"><span class="k">side_effect</span><span class="v ok">false</span></div>
+          <div class="row"><span class="k">idempotent</span><span class="v ok">true</span></div>
+          <div class="row"><span class="k">auth</span><span class="v secret">secret_ref: sap/readonly</span></div>
+          <div class="row"><span class="k">timeout_ms</span><span class="v">8000</span></div>
+          <div class="row"><span class="k">retry</span><span class="v">3 · exponential backoff</span></div>
+        </div>
+      </div>
+      ${obs([{l:'latency p95',v:'420',u:'ms'},{l:'error rate',v:'0.0',u:'%'},{l:'retries (5m)',v:'0'},{l:'breaker',v:'closed'}])}`,
+
+    cmms: () => `
+      <div class="det-head" style="border-color: var(--write);">
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+          <span class="det-title">cmms_create_work_order</span><span class="oc-pill write"><span class="dot"></span>write · side-effect</span><span class="oc-meta">@1.2.0</span><span class="health ok"><span class="d"></span>healthy</span>
+        </div>
+        <div class="oc-sub">Creates a work order in the CMMS. <b>Mutates external state</b> — gated, non-idempotent, always audited.</div>
+      </div>
+      <div class="det-sec">
+        <div class="approval"><i class="ph ph-shield-warning"></i><div><div style="font-weight:600; font-size:13.5px;">Side-effecting · approval + idempotency-key required</div><div class="oc-sub" style="margin-top:4px;">Because it is non-idempotent, every call must carry a unique idempotency-key, and a human must approve before execution.</div></div></div>
+      </div>
+      <div class="det-sec">
+        <div class="oc-detail-label" style="margin-bottom:8px;">Manifest</div>
+        <div class="lin-record">
+          <div class="row"><span class="k">source</span><span class="v tool">CMMS</span></div>
+          <div class="row"><span class="k">tags</span><span class="v">work-order, write</span></div>
+          <div class="row"><span class="k">side_effect</span><span class="v bad">true</span></div>
+          <div class="row"><span class="k">idempotent</span><span class="v bad">false · key required</span></div>
+          <div class="row"><span class="k">approval</span><span class="v tool">required</span></div>
+          <div class="row"><span class="k">auth</span><span class="v secret">secret_ref: cmms/client</span></div>
+          <div class="row"><span class="k">timeout_ms</span><span class="v">8000</span></div>
+          <div class="row"><span class="k">retry</span><span class="v">3 · only on idempotent failures</span></div>
+        </div>
+      </div>
+      <div class="det-sec">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <div><div class="oc-detail-label" style="margin-bottom:6px;">input · JSON Schema</div><div class="oc-code">{
+  "type": "object",
+  "properties": {
+    "asset_id":  { "type": "string" },
+    "task_code": { "type": "string" },
+    "priority":  { "enum":
+      ["LOW","MEDIUM","HIGH"] },
+    "idempotency_key":
+      { "type": "string" }
+  },
+  "required": ["asset_id",
+    "task_code","idempotency_key"]
+}</div></div>
+          <div><div class="oc-detail-label" style="margin-bottom:6px;">output · JSON Schema</div><div class="oc-code">{
+  "type": "object",
+  "properties": {
+    "work_order_id":
+      { "type": "string" },
+    "status": { "type": "string" }
+  },
+  "required": ["work_order_id"]
+}</div></div>
+        </div>
+      </div>
+      ${obs([{l:'latency p95',v:'1.2',u:'s'},{l:'error rate',v:'0.0',u:'%'},{l:'retries (5m)',v:'0'},{l:'breaker',v:'closed'}])}`,
+
+    inv: () => `
+      <div class="det-head" style="border-color: var(--marker);">
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+          <span class="det-title">sap_inventory_lookup</span><span class="oc-pill read"><span class="dot"></span>read</span><span class="oc-meta">@0.9</span><span class="health bad"><span class="d"></span>breaker open</span>
+        </div>
+        <div class="oc-sub">Looks up spare-part inventory levels from SAP. Currently <b>degraded</b> — the circuit-breaker has tripped and calls are short-circuited.</div>
+      </div>
+      ${obs([
+        {l:'latency p95',v:'—',u:'failing'},{l:'error rate',v:'100',u:'%'},{l:'retries (5m)',v:'12'},{l:'breaker',v:'OPEN'}
+      ], `<div class="breaker"><i class="ph ph-lightning-slash"></i><div><div style="font-weight:600; font-size:13.5px;">Circuit-breaker OPEN</div><div class="oc-sub" style="margin-top:4px;">Tripped at 11:02:33 after 3 consecutive timeouts. Calls fail fast (no upstream hit). Half-open retry in <b>30s</b>; intents depending on this tool will surface a normalized error.</div></div></div>`)}
+      <div class="det-sec">
+        <div class="oc-detail-label" style="margin-bottom:8px;">Manifest</div>
+        <div class="lin-record">
+          <div class="row"><span class="k">source</span><span class="v">SAP</span></div>
+          <div class="row"><span class="k">tags</span><span class="v">inventory, read</span></div>
+          <div class="row"><span class="k">side_effect</span><span class="v ok">false</span></div>
+          <div class="row"><span class="k">idempotent</span><span class="v ok">true</span></div>
+          <div class="row"><span class="k">auth</span><span class="v secret">secret_ref: sap/readonly</span></div>
+          <div class="row"><span class="k">timeout_ms</span><span class="v">6000</span></div>
+          <div class="row"><span class="k">breaker</span><span class="v bad">open · reopen in 30s</span></div>
+        </div>
+      </div>`
+  };
+
+  const META = {
+    snow:{rw:'read'}, sap:{rw:'read'}, cmms:{rw:'write'}, inv:{rw:'read', bad:true}
+  };
+
+  function select(id){
+    document.querySelectorAll('.tool-row').forEach(r=>r.classList.toggle('sel', r.dataset.tool===id));
+    document.getElementById('detail').innerHTML = DET[id]();
+    const tag = document.getElementById('detTag');
+    const m = META[id];
+    tag.className = 'oc-pill ' + (m.bad?'err':(m.rw==='write'?'write':'dim'));
+    tag.innerHTML = '<span class="dot"></span>' + (m.bad ? 'degraded' : m.rw);
+    document.getElementById('detail').scrollTop = 0;
+  }
+
+  function setFilter(f){
+    document.querySelectorAll('.filt button').forEach(b=>b.classList.toggle('on', b.dataset.f===f));
+    document.querySelectorAll('.tool-row').forEach(r=>{ r.style.display = (f==='all'||r.dataset.rw===f)?'flex':'none'; });
+  }
+  function filterList(q){
+    q=q.toLowerCase();
+    document.querySelectorAll('.tool-row').forEach(r=>{ r.style.display = r.textContent.toLowerCase().includes(q)?'flex':'none'; });
+  }
+
+  select('snow');
+</script>
+</body>
+</html>

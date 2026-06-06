@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Orchestration Console — Ask · Linkurious direction</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css">
+<style>
+/* =========================================================================
+   LINKURIOUS-DIRECTION DESIGN TOKENS  (mimic, built alongside locked system)
+   ========================================================================= */
+:root{
+  --lk-blue:#1499ff;  --lk-blue-ink:#0c6fc2;  --lk-blue-soft:#e8f4ff;  --lk-blue-deep:#0a3a63;
+  --lk-black:#0a0b0d;  --lk-black-2:#15171b;
+  --lk-ink:rgba(10,11,13,.9);  --lk-ink-soft:#535353;  --lk-ink-faint:#8d8d8d;
+  --lk-paper:#ffffff;  --lk-surface:#f5f6f8;  --lk-surface-2:#ececef;  --lk-line:#e4e5e8;
+  /* status — product rule preserved, tuned next to the blue */
+  --read:#19a05f;  --read-soft:#e6f6ee;  --read-ink:#107a47;
+  --write:#e8973a;  --write-soft:#fdf0dd;  --write-ink:#b56a10;
+  --err:#e5484d;   --err-soft:#fde9e9;    --err-ink:#c12329;
+  --violet:#7b6be0;
+  --font-display:'Space Grotesk',-apple-system,sans-serif;
+  --font-body:'Roboto',-apple-system,system-ui,sans-serif;
+  --font-mono:'Roboto Mono',ui-monospace,monospace;
+  --r-pill:999px; --r-card:12px; --r-sm:8px; --r-xs:6px;
+  --shadow-card:0 1px 2px rgba(12,18,28,.05), 0 8px 28px rgba(12,18,28,.06);
+  --shadow-pop:0 24px 64px rgba(10,11,13,.28);
+  --ease:cubic-bezier(.2,.7,.2,1); --dur:.2s;
+}
+*{ box-sizing:border-box; }
+html,body{ height:100%; }
+body{ margin:0; font-family:var(--font-body); color:var(--lk-ink); background:var(--lk-surface);
+  font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased; }
+h1,h2,h3,.display{ font-family:var(--font-display); font-weight:700; letter-spacing:-.01em; }
+button{ font-family:inherit; }
+
+/* ---------- app shell ---------- */
+.app{ display:grid; grid-template-columns:248px 1fr; height:100vh; }
+
+/* ---------- left rail (black, Linkurious nav/footer feel) ---------- */
+.rail{ position:relative; background:var(--lk-black); color:#fff; padding:22px 16px; display:flex; flex-direction:column; gap:4px; overflow:hidden; }
+.rail .net{ position:absolute; right:-60px; top:-40px; width:220px; height:220px; opacity:.5; pointer-events:none; }
+.brand{ display:flex; align-items:center; gap:11px; padding:4px 8px 20px; position:relative; z-index:1; }
+.brand .mark{ width:34px; height:34px; border-radius:9px; background:var(--lk-blue); display:grid; place-items:center; color:#fff; font-size:19px; box-shadow:0 0 0 4px rgba(20,153,255,.18); }
+.brand .wm{ font-family:var(--font-display); font-weight:700; font-size:16px; line-height:1; letter-spacing:.01em; }
+.brand .wm small{ display:block; font-family:var(--font-mono); font-weight:400; font-size:9.5px; letter-spacing:.18em; text-transform:uppercase; color:#7f8794; margin-top:5px; }
+.navgrp{ font-family:var(--font-mono); font-size:9.5px; letter-spacing:.16em; text-transform:uppercase; color:#6b7280; margin:18px 8px 7px; position:relative; z-index:1; }
+.nav{ display:flex; align-items:center; gap:11px; padding:9px 11px; border-radius:var(--r-sm); color:#c5cad3; font-size:13.5px; font-weight:500; text-decoration:none; cursor:pointer; transition:background var(--dur) var(--ease), color var(--dur) var(--ease); position:relative; z-index:1; }
+.nav i{ font-size:17px; }
+.nav:hover{ background:rgba(255,255,255,.06); color:#fff; }
+.nav.on{ background:var(--lk-blue); color:#fff; }
+.rail-foot{ margin-top:auto; position:relative; z-index:1; font-size:11.5px; line-height:1.5; color:#7f8794; border-top:1px solid rgba(255,255,255,.1); padding:14px 8px 2px; }
+.rail-foot b{ color:#c5cad3; font-weight:500; }
+
+/* ---------- main ---------- */
+.main{ display:flex; flex-direction:column; min-width:0; background:var(--lk-surface); }
+.topbar{ display:flex; align-items:center; gap:14px; padding:14px 26px; background:var(--lk-paper); border-bottom:1px solid var(--lk-line); flex-wrap:wrap; }
+.crumb{ font-size:13px; color:var(--lk-ink-faint); }
+.crumb b{ color:var(--lk-ink); font-weight:600; }
+.spacer{ flex:1; }
+.meta{ font-family:var(--font-mono); font-size:11px; color:var(--lk-ink-faint); }
+.meta b{ color:var(--lk-ink); font-weight:500; }
+
+/* segmented control */
+.seg{ display:inline-flex; background:var(--lk-surface-2); border-radius:var(--r-pill); padding:3px; }
+.seg button{ border:none; background:none; font-size:11.5px; font-weight:500; letter-spacing:.01em; padding:6px 14px; border-radius:var(--r-pill); color:var(--lk-ink-soft); cursor:pointer; transition:all var(--dur) var(--ease); }
+.seg button.on{ background:var(--lk-black); color:#fff; }
+
+/* ---------- split / master-detail ---------- */
+.split{ display:grid; grid-template-columns:1.04fr .96fr; gap:0; flex:1; min-height:0; }
+.work{ padding:26px; overflow:auto; display:flex; flex-direction:column; gap:18px; }
+.evidence{ background:var(--lk-paper); border-left:1px solid var(--lk-line); display:flex; flex-direction:column; min-height:0; }
+
+/* ---------- generic bits ---------- */
+.eyebrow{ font-family:var(--font-mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--lk-ink-faint); }
+.sub{ color:var(--lk-ink-soft); font-size:12.5px; line-height:1.55; }
+.card{ background:var(--lk-paper); border:1px solid var(--lk-line); border-radius:var(--r-card); box-shadow:var(--shadow-card); }
+.divider{ height:1px; background:var(--lk-line); }
+.section{ display:flex; flex-direction:column; gap:11px; }
+.link{ color:var(--lk-blue-ink); font-weight:500; font-size:12.5px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; }
+.link:hover{ text-decoration:underline; }
+
+/* buttons — pill */
+.btn{ display:inline-flex; align-items:center; gap:8px; font-size:13px; font-weight:500; padding:10px 18px; border-radius:var(--r-pill); border:1.5px solid transparent; cursor:pointer; transition:all var(--dur) var(--ease); background:none; white-space:nowrap; }
+.btn i{ font-size:16px; }
+.btn.primary{ background:var(--lk-blue); color:#fff; }
+.btn.primary:hover{ background:var(--lk-blue-ink); transform:translateY(-1px); }
+.btn.amber{ background:var(--write); color:#fff; }
+.btn.amber:hover{ background:var(--write-ink); transform:translateY(-1px); }
+.btn.amber:disabled{ opacity:.45; cursor:not-allowed; transform:none; }
+.btn.ghost{ background:var(--lk-paper); color:var(--lk-ink); border-color:var(--lk-line); }
+.btn.ghost:hover{ border-color:var(--lk-ink-faint); }
+.btn.sm{ padding:7px 13px; font-size:12px; }
+.btn.dark{ background:var(--lk-black); color:#fff; }
+
+/* request box — structured, NOT chat */
+.reqbox{ display:flex; align-items:center; gap:10px; background:var(--lk-paper); border:1.5px solid var(--lk-line); border-radius:var(--r-pill); padding:7px 8px 7px 20px; box-shadow:var(--shadow-card); transition:border-color var(--dur) var(--ease); }
+.reqbox:focus-within{ border-color:var(--lk-blue); box-shadow:0 0 0 4px var(--lk-blue-soft); }
+.reqbox .q{ flex:1; border:none; outline:none; font-family:var(--font-body); font-size:15.5px; color:var(--lk-ink); background:none; min-width:0; }
+
+/* status pills */
+.pill{ display:inline-flex; align-items:center; gap:7px; font-family:var(--font-mono); font-size:10.5px; font-weight:500; letter-spacing:.03em; padding:4px 11px; border-radius:var(--r-pill); border:1px solid; text-transform:lowercase; }
+.pill .dot{ width:7px; height:7px; border-radius:50%; }
+.pill.read{ color:var(--read-ink); background:var(--read-soft); border-color:#bfe6d2; } .pill.read .dot{ background:var(--read); }
+.pill.write{ color:var(--write-ink); background:var(--write-soft); border-color:#f3d6a5; } .pill.write .dot{ background:var(--write); }
+.pill.err{ color:var(--err-ink); background:var(--err-soft); border-color:#f3bcbe; } .pill.err .dot{ background:var(--err); }
+.pill.accent{ color:var(--lk-blue-ink); background:var(--lk-blue-soft); border-color:#bfe1fb; } .pill.accent .dot{ background:var(--lk-blue); }
+.pill.dim{ color:var(--lk-ink-faint); background:var(--lk-surface); border-color:var(--lk-line); } .pill.dim .dot{ background:var(--lk-ink-faint); }
+.ro,.wo{ font-family:var(--font-mono); font-size:9.5px; font-weight:500; letter-spacing:.04em; padding:2px 7px; border-radius:var(--r-xs); text-transform:uppercase; }
+.ro{ color:var(--read-ink); background:var(--read-soft); }
+.wo{ color:var(--write-ink); background:var(--write-soft); }
+
+/* intent name + confidence */
+.intent-name{ font-family:var(--font-mono); font-size:21px; font-weight:500; color:var(--lk-ink); letter-spacing:-.01em; }
+.conf{ display:flex; align-items:center; gap:12px; }
+.conf .lbl{ font-family:var(--font-mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--lk-ink-faint); }
+.conf .track{ flex:1; height:7px; border-radius:var(--r-pill); background:var(--lk-surface-2); overflow:hidden; }
+.conf .fill{ height:100%; border-radius:var(--r-pill); background:linear-gradient(90deg,var(--lk-blue),#46b3ff); transition:width .6s var(--ease); }
+.conf .num{ font-family:var(--font-mono); font-size:14px; font-weight:500; color:var(--lk-blue-ink); }
+
+/* editable param chips */
+.chip{ display:flex; align-items:center; justify-content:space-between; gap:10px; font-family:var(--font-mono); font-size:12.5px; background:var(--lk-surface); border:1px solid var(--lk-line); border-radius:var(--r-sm); padding:9px 12px; }
+.chip .key{ color:var(--lk-ink-faint); }
+.chip .val{ color:var(--lk-blue-ink); font-weight:500; }
+.chip .resolved{ color:var(--lk-ink-faint); font-style:italic; font-size:11.5px; }
+.chip .edit{ color:var(--lk-ink-faint); cursor:pointer; display:grid; place-items:center; }
+.chip .edit:hover{ color:var(--lk-blue); }
+
+/* clarify nudge + candidates */
+.nudge{ display:flex; gap:12px; align-items:flex-start; padding:14px 16px; border:1px solid #f3d6a5; background:var(--write-soft); border-radius:var(--r-sm); }
+.nudge i{ color:var(--write-ink); font-size:19px; margin-top:1px; }
+.cand{ display:flex; align-items:center; gap:10px; padding:11px 13px; border:1px solid var(--lk-line); border-radius:var(--r-sm); background:var(--lk-paper); }
+.cand .nm{ font-family:var(--font-mono); font-size:12.5px; }
+.cand .cf{ font-family:var(--font-mono); font-size:11px; color:var(--lk-ink-faint); }
+
+/* warn block */
+.warn{ display:flex; gap:10px; align-items:flex-start; padding:12px 14px; border:1px solid #f3d6a5; background:var(--write-soft); border-radius:var(--r-sm); }
+.warn i{ color:var(--write-ink); font-size:18px; margin-top:1px; }
+.warn b{ color:var(--write-ink); }
+
+/* ---------- evidence: plan + step tracker ---------- */
+.ev-head{ display:flex; align-items:center; gap:11px; padding:16px 22px; border-bottom:1px solid var(--lk-line); }
+.ev-title{ font-family:var(--font-display); font-weight:600; font-size:15px; }
+.ev-body{ padding:20px 22px; overflow:auto; flex:1; }
+
+.steps{ display:flex; flex-direction:column; position:relative; }
+.steps::before{ content:''; position:absolute; left:15px; top:14px; bottom:14px; width:2px; background:var(--lk-line); }
+.step{ position:relative; padding-left:42px; padding-bottom:14px; }
+.step:last-child{ padding-bottom:0; }
+.mk{ position:absolute; left:0; top:0; width:32px; height:32px; border-radius:50%; display:grid; place-items:center; background:var(--lk-paper); border:2px solid var(--lk-line); color:var(--lk-ink-faint); font-family:var(--font-mono); font-size:12px; font-weight:500; z-index:1; transition:all var(--dur) var(--ease); }
+.step.is-run .mk, .mk.run{ border-color:var(--lk-blue); color:var(--lk-blue); box-shadow:0 0 0 4px var(--lk-blue-soft); }
+.mk.done{ background:var(--read); border-color:var(--read); color:#fff; }
+.mk.gate{ border-color:var(--write); color:var(--write-ink); box-shadow:0 0 0 4px var(--write-soft); }
+.mk.wdone{ background:var(--write); border-color:var(--write); color:#fff; }
+.step.pending .mk{ opacity:.6; }
+.step-head{ display:flex; align-items:flex-start; gap:10px; cursor:pointer; padding-top:5px; }
+.step-head .txt{ flex:1; min-width:0; }
+.step-head .t{ font-size:13.5px; font-weight:500; color:var(--lk-ink); }
+.step-head .d{ font-size:11.5px; color:var(--lk-ink-faint); margin-top:2px; }
+.caret{ color:var(--lk-ink-faint); font-size:15px; transition:transform var(--dur) var(--ease); margin-top:3px; }
+.step.is-open .caret{ transform:rotate(90deg); }
+.step-detail{ display:none; margin-top:11px; }
+.step.is-open .step-detail{ display:block; }
+.detail-label{ font-family:var(--font-mono); font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--lk-ink-faint); margin-bottom:7px; }
+
+/* code / evidence blocks */
+.code{ font-family:var(--font-mono); font-size:11.5px; line-height:1.65; background:var(--lk-black); color:#d7dbe2; border-radius:var(--r-sm); padding:13px 15px; white-space:pre-wrap; word-break:break-word; }
+.code .kw{ color:#5cb6ff; } .code .pm{ color:#ffc04d; } .code .str{ color:#7fe0a6; }
+.kv{ display:grid; grid-template-columns:auto 1fr; gap:6px 14px; font-family:var(--font-mono); font-size:11.5px; }
+.kv .k{ color:var(--lk-ink-faint); } .kv .v{ color:var(--lk-ink); }
+.nodeids{ display:flex; flex-wrap:wrap; gap:6px; }
+.nodeids code{ font-family:var(--font-mono); font-size:10.5px; background:var(--lk-blue-soft); color:var(--lk-blue-ink); border-radius:var(--r-xs); padding:3px 8px; }
+.row{ display:flex; gap:14px; }
+
+/* spinner */
+.spin{ display:inline-block; animation:spin 1s linear infinite; }
+@keyframes spin{ to{ transform:rotate(360deg); } }
+
+/* ---------- write-approval modal ---------- */
+.backdrop{ position:fixed; inset:0; background:rgba(10,11,13,.6); display:none; align-items:center; justify-content:center; z-index:50; padding:24px; backdrop-filter:blur(2px); }
+.backdrop.open{ display:flex; }
+.modal{ width:min(560px,100%); max-height:92vh; overflow:auto; background:var(--lk-paper); border-radius:var(--r-card); box-shadow:var(--shadow-pop); }
+.m-accent{ height:5px; background:var(--write); border-radius:var(--r-card) var(--r-card) 0 0; }
+.m-head{ display:flex; align-items:center; gap:13px; padding:18px 22px; border-bottom:1px solid var(--lk-line); }
+.m-head .ic{ width:42px; height:42px; border-radius:11px; display:grid; place-items:center; background:var(--write-soft); color:var(--write-ink); font-size:21px; flex:none; }
+.m-title{ font-family:var(--font-display); font-weight:600; font-size:16px; }
+.m-sub{ font-size:12px; color:var(--lk-ink-soft); margin-top:2px; }
+.close-x{ margin-left:auto; cursor:pointer; color:var(--lk-ink-faint); font-size:22px; background:none; border:none; }
+.close-x:hover{ color:var(--lk-ink); }
+.m-body{ padding:20px 22px; display:flex; flex-direction:column; gap:18px; }
+.m-foot{ display:flex; align-items:center; gap:12px; padding:16px 22px; border-top:1px solid var(--lk-line); background:var(--lk-surface); border-radius:0 0 var(--r-card) var(--r-card); }
+.m-check{ display:flex; gap:10px; align-items:center; font-size:13px; cursor:pointer; user-select:none; }
+.m-check input{ width:18px; height:18px; accent-color:var(--write); flex:none; }
+.keyrow{ display:flex; align-items:center; gap:10px; font-family:var(--font-mono); font-size:12px; background:var(--lk-surface); border:1px solid var(--lk-line); border-radius:var(--r-sm); padding:9px 12px; }
+.keyrow .kk{ color:var(--lk-ink-faint); } .keyrow .kv{ color:var(--lk-ink); font-weight:500; word-break:break-all; }
+
+/* ---------- responsive ---------- */
+@media (max-width:1080px){ .split{ grid-template-columns:1fr; } .evidence{ border-left:none; border-top:1px solid var(--lk-line); } }
+@media (max-width:720px){ .app{ grid-template-columns:1fr; } .rail{ display:none; } }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ===================== LEFT RAIL ===================== -->
+  <aside class="rail">
+    <svg class="net" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <g stroke="#1499ff" stroke-width="1" opacity="0.5">
+        <line x1="40" y1="60" x2="110" y2="30"/><line x1="110" y1="30" x2="160" y2="80"/>
+        <line x1="40" y1="60" x2="70" y2="130"/><line x1="70" y1="130" x2="150" y2="150"/>
+        <line x1="160" y1="80" x2="150" y2="150"/><line x1="110" y1="30" x2="70" y2="130"/>
+      </g>
+      <g fill="#1499ff">
+        <circle cx="40" cy="60" r="5"/><circle cx="110" cy="30" r="6"/><circle cx="160" cy="80" r="4"/>
+        <circle cx="70" cy="130" r="5"/><circle cx="150" cy="150" r="6"/>
+      </g>
+    </svg>
+    <div class="brand">
+      <span class="mark"><i class="ph-bold ph-graph"></i></span>
+      <div class="wm">Console<small>orchestration</small></div>
+    </div>
+    <div class="navgrp">Workspace</div>
+    <div class="nav on"><i class="ph ph-terminal-window"></i> Ask</div>
+    <div class="nav"><i class="ph ph-table"></i> Results</div>
+    <div class="nav"><i class="ph ph-tree-structure"></i> Trace</div>
+    <div class="navgrp">Reference</div>
+    <div class="nav"><i class="ph ph-list-checks"></i> Intent catalogue</div>
+    <div class="nav"><i class="ph ph-plugs"></i> Tool registry</div>
+    <div class="nav"><i class="ph ph-graph"></i> Graph schema</div>
+    <div class="rail-foot"><b>Read-only by default.</b> Writes are gated, logged capabilities.</div>
+  </aside>
+
+  <!-- ===================== MAIN ===================== -->
+  <div class="main">
+
+    <div class="topbar">
+      <span class="crumb">Workspace / <b>Ask</b></span>
+      <span class="seg" role="group" aria-label="Scenario">
+        <button id="segHigh" class="on" onclick="setScenario('high')">High confidence</button>
+        <button id="segLow" onclick="setScenario('low')">Ambiguous</button>
+        <button id="segWrite" onclick="setScenario('write')">Write action</button>
+      </span>
+      <span class="spacer"></span>
+      <span class="meta">request_id <b id="reqId">req_7f3a9c21</b></span>
+      <span class="meta">graph_version <b>2026-06-04T09:00Z</b></span>
+      <button class="btn ghost sm" onclick="resetFlow()"><i class="ph ph-arrow-counter-clockwise"></i> Reset</button>
+    </div>
+
+    <div class="split">
+
+      <!-- ---------- WORK PANE ---------- -->
+      <div class="work">
+
+        <div class="section">
+          <span class="eyebrow">Request</span>
+          <div class="reqbox">
+            <input id="reqInput" class="q" value="Which pumps at the North plant are overdue for lubrication?" aria-label="Request">
+            <button class="btn primary" id="matchBtn" onclick="doMatch()"><i class="ph ph-magnifying-glass"></i> Match</button>
+          </div>
+          <span class="sub" style="font-size:11.5px;">A structured request, not a chat. The system maps it to a registered intent — it never writes free-form queries.</span>
+        </div>
+
+        <!-- matched intent (high conf) -->
+        <div id="intentPanel" class="card" style="padding:20px; display:none; flex-direction:column; gap:16px;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span class="eyebrow">Matched intent</span><span class="spacer"></span>
+            <span class="pill read"><span class="dot"></span>read</span>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:13px;">
+            <span class="intent-name" id="intentName">assets_overdue_for_task</span>
+            <div class="conf">
+              <span class="lbl">confidence</span>
+              <span class="track"><span class="fill" id="confFill" style="width:92%;"></span></span>
+              <span class="num" id="confNum">0.92</span>
+            </div>
+            <span class="sub" id="confNote">Above the auto-run threshold (0.70). Confirm the parameters, then run.</span>
+          </div>
+          <div class="divider"></div>
+          <div style="display:flex; flex-direction:column; gap:9px;">
+            <span class="eyebrow">Parameters · editable before run</span>
+            <span class="chip"><span><span class="key">site_id =</span> <span class="val">SITE-NORTH</span></span><span style="display:flex; gap:9px; align-items:center;"><span class="resolved">"North plant"</span><span class="edit"><i class="ph ph-pencil-simple"></i></span></span></span>
+            <span class="chip"><span><span class="key">task_code =</span> <span class="val">LUBE-01</span></span><span style="display:flex; gap:9px; align-items:center;"><span class="resolved">"lubrication"</span><span class="edit"><i class="ph ph-pencil-simple"></i></span></span></span>
+          </div>
+          <div style="display:flex; align-items:center; gap:14px; padding-top:2px;">
+            <button class="btn primary" id="runBtn" onclick="runPlan()"><i class="ph ph-play"></i> Confirm &amp; run plan</button>
+            <span class="link" onclick="openTrace()"><i class="ph ph-tree-structure"></i> View full trace</span>
+          </div>
+        </div>
+
+        <!-- write-intent panel (amber) -->
+        <div id="writePanel" class="card" style="padding:0; display:none; flex-direction:column; overflow:hidden;">
+          <div style="height:5px; background:var(--write);"></div>
+          <div style="padding:20px; display:flex; flex-direction:column; gap:16px;">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="eyebrow">Matched intent</span><span class="spacer"></span>
+              <span class="pill write"><span class="dot"></span>write · side-effect</span>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:13px;">
+              <span class="intent-name">create_work_order</span>
+              <div class="conf"><span class="lbl">confidence</span><span class="track"><span class="fill" style="width:88%;"></span></span><span class="num">0.88</span></div>
+              <div class="warn"><i class="ph ph-warning"></i><div style="font-size:12.5px;"><b>This capability changes external state.</b> It creates a work order in the CMMS, so it cannot run automatically — it requires explicit approval.</div></div>
+            </div>
+            <div class="divider"></div>
+            <div style="display:flex; flex-direction:column; gap:9px;">
+              <span class="eyebrow">Parameters · editable before approval</span>
+              <span class="chip"><span><span class="key">asset_id =</span> <span class="val">P-101</span></span><span style="display:flex; gap:9px; align-items:center;"><span class="resolved">"Pump P-101"</span><span class="edit"><i class="ph ph-pencil-simple"></i></span></span></span>
+              <span class="chip"><span><span class="key">task_code =</span> <span class="val">LUBE-01</span></span><span style="display:flex; gap:9px; align-items:center;"><span class="resolved">"lubrication"</span><span class="edit"><i class="ph ph-pencil-simple"></i></span></span></span>
+              <span class="chip"><span><span class="key">priority =</span> <span class="val">HIGH</span></span><span style="display:flex; gap:9px; align-items:center;"><span class="resolved">"high-priority"</span><span class="edit"><i class="ph ph-pencil-simple"></i></span></span></span>
+            </div>
+            <div style="display:flex; align-items:center; gap:14px; padding-top:2px;">
+              <button class="btn amber" onclick="openApproval()"><i class="ph ph-shield-check"></i> Review &amp; approve write…</button>
+              <span class="link" onclick="openTrace()"><i class="ph ph-tree-structure"></i> View full trace</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- write success summary -->
+        <div id="writeSuccess" class="card" style="padding:16px 20px; display:none; align-items:center; gap:14px;">
+          <span class="pill write"><span class="dot"></span>work order created</span>
+          <span class="sub"><span style="font-family:var(--font-mono);">WO-20485</span> · approved by <span style="font-family:var(--font-mono);">n.forshteyn</span> · logged</span>
+          <span class="spacer"></span>
+          <button class="btn ghost sm" onclick="openTrace()"><i class="ph ph-tree-structure"></i> View trace</button>
+        </div>
+
+        <!-- low-confidence nudge -->
+        <div id="nudgePanel" class="card" style="padding:20px; display:none; flex-direction:column; gap:15px;">
+          <div class="nudge">
+            <i class="ph ph-question"></i>
+            <div>
+              <div style="font-weight:600; font-size:13.5px;">Needs clarification — confidence below threshold</div>
+              <div class="sub" style="margin-top:4px;">Three registered capabilities could match. The console asks rather than guesses. Site resolved: <span style="font-family:var(--font-mono);">SITE-NORTH ✓</span></div>
+            </div>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <span class="eyebrow">Candidate intents</span>
+            <div class="cand"><span class="nm">assets_overdue_for_task</span><span class="ro">read</span><span class="spacer"></span><span class="cf">0.48</span></div>
+            <div class="cand"><span class="nm">assets_by_site</span><span class="ro">read</span><span class="spacer"></span><span class="cf">0.41</span></div>
+            <div class="cand"><span class="nm">asset_health_summary</span><span class="ro">read</span><span class="spacer"></span><span class="cf">0.33</span></div>
+          </div>
+          <div style="display:flex; align-items:center; gap:14px;">
+            <button class="btn amber" onclick="openClarify()"><i class="ph ph-arrow-right"></i> Clarify &amp; choose a capability</button>
+            <span class="sub" style="font-size:11.5px;">No query runs until one is chosen.</span>
+          </div>
+        </div>
+
+        <!-- result summary -->
+        <div id="resultSummary" class="card" style="padding:16px 20px; display:none; align-items:center; gap:14px;">
+          <span class="pill read"><span class="dot"></span>3 rows</span>
+          <span class="sub">All 5 steps complete · every field carries lineage.</span>
+          <span class="spacer"></span>
+          <button class="btn primary" onclick="openResults()"><i class="ph ph-table"></i> View results</button>
+        </div>
+
+      </div>
+
+      <!-- ---------- EVIDENCE PANE ---------- -->
+      <div class="evidence">
+        <div class="ev-head">
+          <i class="ph ph-path" id="evIcon" style="font-size:18px; color:var(--lk-blue);"></i>
+          <span class="ev-title" id="evTitle">Execution plan</span>
+          <span class="spacer"></span>
+          <span class="pill dim" id="evStatus"><span class="dot"></span>5 steps · pending</span>
+        </div>
+        <div class="ev-body" id="evBody">
+
+          <!-- read plan -->
+          <div class="steps" id="steps">
+            <div class="step has-detail" data-step="1">
+              <span class="mk">1</span>
+              <div class="step-head" onclick="toggleStep(1)">
+                <div class="txt"><div class="t">Classify intent</div><div class="d">deterministic router · temperature 0</div></div>
+                <i class="ph ph-caret-right caret"></i>
+              </div>
+              <div class="step-detail">
+                <div class="detail-label">selected from registered intents</div>
+                <div class="code">selected  assets_overdue_for_task   <span class="pm">0.92</span>
+next-best assets_by_site            0.31
+next-best asset_health_summary      0.18</div>
+              </div>
+            </div>
+            <div class="step has-detail" data-step="2">
+              <span class="mk">2</span>
+              <div class="step-head" onclick="toggleStep(2)">
+                <div class="txt"><div class="t">Extract &amp; validate parameters</div><div class="d">typed · schema + allow-list checked</div></div>
+                <i class="ph ph-caret-right caret"></i>
+              </div>
+              <div class="step-detail">
+                <div class="detail-label">bound parameters</div>
+                <div class="kv"><span class="k">site_id</span><span class="v">"SITE-NORTH" · string · required ✓</span><span class="k">task_code</span><span class="v">"LUBE-01" · string · required ✓</span></div>
+              </div>
+            </div>
+            <div class="step has-detail" data-step="3">
+              <span class="mk">3</span>
+              <div class="step-head" onclick="toggleStep(3)">
+                <div class="txt"><div class="t">Run Cypher template <span style="font-family:var(--font-mono);">assets_overdue_for_task@3</span> <span class="ro">read-only</span></div><div class="d">parameterized · cost &amp; row guard ✓</div></div>
+                <i class="ph ph-caret-right caret"></i>
+              </div>
+              <div class="step-detail">
+                <div class="detail-label">bound query</div>
+                <div class="code"><span class="kw">MATCH</span> (s:Site {id: <span class="pm">$site_id</span>})-[:CONTAINS]->(a:Asset)
+<span class="kw">MATCH</span> (a)&lt;-[:TARGETS]-(wo:WorkOrder)-[:EXECUTES]->(t:MaintenanceTask {code: <span class="pm">$task_code</span>})
+<span class="kw">WHERE</span> wo.due_date &lt; date() <span class="kw">AND</span> wo.status &lt;&gt; <span class="str">'CLOSED'</span>
+<span class="kw">RETURN</span> a.id, a.name, wo.due_date, wo.status <span class="kw">ORDER BY</span> wo.due_date</div>
+                <div style="margin-top:12px;"><div class="detail-label">node ids touched · 3 rows</div>
+                  <div class="nodeids"><code>a:1042</code><code>a:1048</code><code>a:1055</code></div>
+                </div>
+              </div>
+            </div>
+            <div class="step has-detail" data-step="4">
+              <span class="mk">4</span>
+              <div class="step-head" onclick="toggleStep(4)">
+                <div class="txt"><div class="t">Enrich via tool <span style="font-family:var(--font-mono);">snowflake_runtime_hours@2.1</span> <span class="ro">read-only</span></div><div class="d">source Snowflake · 612 ms · 1 attempt</div></div>
+                <i class="ph ph-caret-right caret"></i>
+              </div>
+              <div class="step-detail">
+                <div class="row" style="align-items:flex-start;">
+                  <div style="flex:1; min-width:0;"><div class="detail-label">input</div><div class="code">{ "asset_ids":
+  ["P-101","P-104","P-110"] }</div></div>
+                  <div style="flex:1; min-width:0;"><div class="detail-label">output</div><div class="code">{ "P-101": 7420,
+  "P-104": 6980,
+  "P-110": 3110 }</div></div>
+                </div>
+              </div>
+            </div>
+            <div class="step has-detail" data-step="5">
+              <span class="mk">5</span>
+              <div class="step-head" onclick="toggleStep(5)">
+                <div class="txt"><div class="t">Assemble response &amp; attach lineage</div><div class="d">provenance stamped on every field</div></div>
+                <i class="ph ph-caret-right caret"></i>
+              </div>
+              <div class="step-detail">
+                <div class="detail-label">per-field provenance · example</div>
+                <div class="code">field      asset → "Pump P-101"
+source     neo4j
+produced   assets_overdue_for_task@3 · [a:1042]
+runtime    snowflake_runtime_hours@2.1</div>
+                <div style="margin-top:10px;"><span class="link" onclick="openResults()"><i class="ph ph-table"></i> Open results + lineage</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- write plan -->
+          <div class="steps" id="writeSteps" style="display:none;">
+            <div class="step has-detail" data-wstep="1">
+              <span class="mk">1</span>
+              <div class="step-head" onclick="this.parentElement.classList.toggle('is-open')">
+                <div class="txt"><div class="t">Classify intent → create_work_order</div><div class="d">deterministic router · temperature 0</div></div>
+                <i class="ph ph-caret-right caret"></i>
+              </div>
+              <div class="step-detail"><div class="detail-label">selected from registered intents</div>
+                <div class="code">selected  create_work_order   <span class="pm">0.88</span>   <span style="color:#f0a861;">[write]</span>
+next-best log_inspection      0.21</div></div>
+            </div>
+            <div class="step has-detail" data-wstep="2">
+              <span class="mk">2</span>
+              <div class="step-head" onclick="this.parentElement.classList.toggle('is-open')">
+                <div class="txt"><div class="t">Extract &amp; validate parameters</div><div class="d">typed · schema + allow-list checked</div></div>
+                <i class="ph ph-caret-right caret"></i>
+              </div>
+              <div class="step-detail"><div class="kv"><span class="k">asset_id</span><span class="v">"P-101" · string · required ✓</span><span class="k">task_code</span><span class="v">"LUBE-01" · string · required ✓</span><span class="k">priority</span><span class="v">"HIGH" · enum · required ✓</span></div></div>
+            </div>
+            <div class="step has-detail" data-wstep="3">
+              <span class="mk gate"><i class="ph ph-shield-warning"></i></span>
+              <div class="step-head" onclick="this.parentElement.classList.toggle('is-open')">
+                <div class="txt"><div class="t">Approval gate <span class="wo">write</span></div><div class="d" id="gateStatus">awaiting human approval — execution is blocked</div></div>
+                <i class="ph ph-caret-right caret"></i>
+              </div>
+              <div class="step-detail"><div class="sub" style="font-size:12px;">A side-effecting capability cannot run without explicit approval. Nothing is written until a human confirms.</div></div>
+            </div>
+            <div class="step pending has-detail" data-wstep="4">
+              <span class="mk">4</span>
+              <div class="step-head" onclick="this.parentElement.classList.toggle('is-open')">
+                <div class="txt"><div class="t">Create work order <span style="font-family:var(--font-mono);">cmms_create_work_order@1.2.0</span> <span class="wo">write · side-effect</span></div><div class="d">blocked until approved</div></div>
+                <i class="ph ph-caret-right caret"></i>
+              </div>
+              <div class="step-detail"><div class="detail-label">payload (on approval)</div>
+                <div class="code">{ "asset_id": "P-101", "task_code": "LUBE-01",
+  "priority": "HIGH",
+  "idempotency_key": "wo-7f3a9c21-01" }</div></div>
+            </div>
+            <div class="step pending has-detail" data-wstep="5">
+              <span class="mk">5</span>
+              <div class="step-head" onclick="this.parentElement.classList.toggle('is-open')">
+                <div class="txt"><div class="t">Assemble response &amp; attach lineage</div><div class="d">provenance + approval record stamped</div></div>
+                <i class="ph ph-caret-right caret"></i>
+              </div>
+              <div class="step-detail"><div class="detail-label">on success</div>
+                <div class="code">work_order_id  WO-20485
+approved_by    n.forshteyn
+written_to     cmms · audit log</div></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ===================== WRITE-ACTION APPROVAL MODAL ===================== -->
+<div class="backdrop" id="approvalModal" role="dialog" aria-modal="true" aria-labelledby="apTitle">
+  <div class="modal">
+    <div class="m-accent"></div>
+    <div class="m-head">
+      <span class="ic"><i class="ph ph-shield-warning"></i></span>
+      <div><div class="m-title" id="apTitle">Approve write action</div><div class="m-sub">This will change external state and cannot be undone automatically.</div></div>
+      <button class="close-x" onclick="closeApproval()" aria-label="Cancel"><i class="ph ph-x"></i></button>
+    </div>
+    <div class="m-body" id="apBody">
+      <div class="warn"><i class="ph ph-warning"></i><div style="font-size:12.5px;"><b>Creates a record in the CMMS.</b> A new work order will be opened against Pump P-101. Review the details below before approving.</div></div>
+      <div>
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;"><span class="eyebrow">Capability</span><span class="spacer"></span><span class="pill write"><span class="dot"></span>write · side-effect</span></div>
+        <div class="intent-name" style="font-size:16px;">create_work_order <span style="color:var(--lk-ink-faint); font-size:12px;">@1</span></div>
+      </div>
+      <div><div class="detail-label">Parameters</div><div class="kv"><span class="k">asset_id</span><span class="v">P-101 · "Pump P-101"</span><span class="k">task_code</span><span class="v">LUBE-01</span><span class="k">priority</span><span class="v">HIGH</span></div></div>
+      <div><div class="detail-label">Backing tool</div>
+        <div class="keyrow"><i class="ph ph-wrench" style="color:var(--write-ink);"></i><span class="kk">tool</span><span class="kv">cmms_create_work_order@1.2.0</span></div>
+        <div class="sub" style="font-size:11.5px; margin-top:6px;">side_effect: true · idempotent: false · elevated scope required</div></div>
+      <div><div class="detail-label">Idempotency key <span style="text-transform:none; letter-spacing:0; color:var(--lk-ink-faint);">— guards against duplicate work orders on retry</span></div>
+        <div class="keyrow"><i class="ph ph-key" style="color:var(--violet);"></i><span class="kk">key</span><span class="kv">wo-7f3a9c21-01</span></div></div>
+      <div><div class="detail-label">Scope &amp; audit</div><div class="kv"><span class="k">attributed to</span><span class="v">n.forshteyn</span><span class="k">scope</span><span class="v">cmms:write (elevated)</span><span class="k">audit</span><span class="v">always logged · request_id req_7f3a9c21</span></div></div>
+      <label class="m-check"><input type="checkbox" id="apConfirm" onchange="document.getElementById('apApprove').disabled=!this.checked"> I understand this creates a work order in the CMMS.</label>
+    </div>
+    <div class="m-foot">
+      <button class="btn ghost" onclick="closeApproval()">Cancel</button>
+      <span class="spacer"></span>
+      <button class="btn amber" id="apApprove" onclick="approveWrite()" disabled><i class="ph ph-shield-check"></i> Approve &amp; execute</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const steps=[1,2,3,4,5]; let timers=[];
+  function clearTimers(){ timers.forEach(t=>clearTimeout(t)); timers=[]; }
+
+  function setStepState(n,state){
+    const step=document.querySelector(`.step[data-step="${n}"]`);
+    step.classList.remove('pending','is-run');
+    const mk=step.querySelector('.mk');
+    if(state==='pending'){ step.classList.add('pending'); mk.className='mk'; mk.innerHTML=n; }
+    else if(state==='run'){ step.classList.add('is-run'); mk.className='mk run'; mk.innerHTML='<i class="ph ph-circle-notch spin"></i>'; }
+    else if(state==='done'){ mk.className='mk done'; mk.innerHTML='<i class="ph ph-check"></i>'; }
+  }
+  function toggleStep(n){ document.querySelector(`.step[data-step="${n}"]`).classList.toggle('is-open'); }
+  function openStepDetail(n){ document.querySelector(`.step[data-step="${n}"]`).classList.add('is-open'); }
+  function closeAllDetails(){ document.querySelectorAll('.step').forEach(s=>s.classList.remove('is-open')); }
+  function setEvStatus(html,cls){ const el=document.getElementById('evStatus'); el.className='pill '+(cls||'dim'); el.innerHTML='<span class="dot"></span>'+html; }
+
+  const reqText={ high:'Which pumps at the North plant are overdue for lubrication?', low:'show me the north plant pumps', write:'Raise a high-priority lubrication work order for Pump P-101' };
+  let scenario='high';
+  function setScenario(s){
+    scenario=s;
+    document.getElementById('segHigh').classList.toggle('on',s==='high');
+    document.getElementById('segLow').classList.toggle('on',s==='low');
+    document.getElementById('segWrite').classList.toggle('on',s==='write');
+    const inp=document.getElementById('reqInput'); inp.value=reqText[s];
+    resetFlow();
+  }
+  function showPlan(which){
+    document.getElementById('steps').style.display=which==='read'?'flex':'none';
+    document.getElementById('writeSteps').style.display=which==='write'?'flex':'none';
+    document.getElementById('evTitle').textContent=which==='write'?'Write plan':'Execution plan';
+    document.getElementById('evIcon').className=which==='write'?'ph ph-shield-warning':'ph ph-path';
+    document.getElementById('evIcon').style.color=which==='write'?'var(--write)':'var(--lk-blue)';
+  }
+  function setWStep(n,state){
+    const st=document.querySelector(`#writeSteps .step[data-wstep="${n}"]`);
+    st.classList.remove('pending','is-run');
+    const mk=st.querySelector('.mk');
+    if(state==='pending'){ st.classList.add('pending'); mk.className='mk'; mk.innerHTML=n; }
+    else if(state==='done'){ mk.className='mk done'; mk.innerHTML='<i class="ph ph-check"></i>'; }
+    else if(state==='wdone'){ mk.className='mk wdone'; mk.innerHTML='<i class="ph ph-check"></i>'; }
+    else if(state==='run'){ st.classList.add('is-run'); mk.className='mk run'; mk.innerHTML='<i class="ph ph-circle-notch spin"></i>'; }
+    else if(state==='gate'){ mk.className='mk gate'; mk.innerHTML='<i class="ph ph-shield-warning"></i>'; }
+  }
+  function resetWriteSteps(){
+    document.querySelectorAll('#writeSteps .step').forEach(st=>st.classList.remove('is-open'));
+    setWStep(1,'done'); setWStep(2,'done'); setWStep(3,'gate'); setWStep(4,'pending'); setWStep(5,'pending');
+    document.getElementById('gateStatus').textContent='awaiting human approval — execution is blocked';
+  }
+  function resetFlow(){
+    clearTimers();
+    ['intentPanel','writePanel','writeSuccess','nudgePanel','resultSummary'].forEach(id=>document.getElementById(id).style.display='none');
+    document.getElementById('matchBtn').style.display='inline-flex';
+    steps.forEach(n=>setStepState(n,'pending'));
+    closeAllDetails(); closeApproval();
+    if(scenario==='write'){ showPlan('write'); resetWriteSteps(); setEvStatus('gated · awaiting approval','write'); }
+    else { showPlan('read'); setEvStatus('5 steps · pending'); }
+  }
+  function doMatch(){
+    document.getElementById('matchBtn').style.display='none';
+    if(scenario==='high'){ document.getElementById('intentPanel').style.display='flex'; setEvStatus('5 steps · ready'); }
+    else if(scenario==='low'){ document.getElementById('nudgePanel').style.display='flex'; setEvStatus('awaiting clarification','write'); }
+    else { document.getElementById('writePanel').style.display='flex'; setEvStatus('gated · awaiting approval','write'); }
+  }
+  function openApproval(){ document.getElementById('apConfirm').checked=false; document.getElementById('apApprove').disabled=true; document.getElementById('approvalModal').classList.add('open'); }
+  function closeApproval(){ document.getElementById('approvalModal').classList.remove('open'); }
+  function openWDetail(n){ document.querySelector(`#writeSteps .step[data-wstep="${n}"]`).classList.add('is-open'); }
+  function approveWrite(){
+    closeApproval();
+    document.getElementById('writePanel').style.display='none';
+    document.getElementById('gateStatus').innerHTML='approved by <span style="font-family:var(--font-mono);">n.forshteyn</span> · '+new Date().toLocaleTimeString();
+    const seq=[
+      ()=>{ setWStep(3,'wdone'); setEvStatus('approved · executing write','write'); },
+      ()=>{ setWStep(4,'run'); openWDetail(4); setEvStatus('writing · cmms_create_work_order','write'); },
+      ()=>{ setWStep(4,'wdone'); setWStep(5,'run'); closeAllDetails(); },
+      ()=>{ setWStep(5,'wdone'); setEvStatus('work order created · logged','write'); document.getElementById('writeSuccess').style.display='flex'; }
+    ];
+    let d=400; seq.forEach((fn,i)=>{ timers.push(setTimeout(fn,d)); d+=(i===1?900:650); });
+  }
+  document.getElementById('approvalModal').addEventListener('click',e=>{ if(e.target.id==='approvalModal') closeApproval(); });
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeApproval(); });
+
+  function runPlan(){
+    document.getElementById('resultSummary').style.display='none'; closeAllDetails();
+    const seq=[
+      ()=>{ setStepState(1,'run'); setEvStatus('executing · step 1 of 5','accent'); },
+      ()=>{ setStepState(1,'done'); setStepState(2,'run'); setEvStatus('executing · step 2 of 5','accent'); },
+      ()=>{ setStepState(2,'done'); setStepState(3,'run'); openStepDetail(3); setEvStatus('executing · step 3 of 5','accent'); },
+      ()=>{ setStepState(3,'done'); setStepState(4,'run'); closeAllDetails(); openStepDetail(4); setEvStatus('executing · step 4 of 5','accent'); },
+      ()=>{ setStepState(4,'done'); setStepState(5,'run'); closeAllDetails(); setEvStatus('executing · step 5 of 5','accent'); },
+      ()=>{ setStepState(5,'done'); setEvStatus('complete · 0.67 s','read'); document.getElementById('resultSummary').style.display='flex'; }
+    ];
+    let d=0; seq.forEach((fn,i)=>{ timers.push(setTimeout(fn,d)); d+=(i===2?900:650); });
+  }
+  function openResults(){ alert('→ Results + Lineage (this is the Linkurious-direction Ask screen; other screens not yet restyled).'); }
+  function openTrace(){ alert('→ Trace / Audit (not yet restyled in this direction).'); }
+  function openClarify(){ alert('→ Clarification (not yet restyled in this direction).'); }
+
+  // land in matched-and-ready state
+  document.getElementById('intentPanel').style.display='flex';
+  document.getElementById('matchBtn').style.display='none';
+  setEvStatus('5 steps · ready');
+</script>
+</body>
+</html>

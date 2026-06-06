@@ -10,3 +10,6 @@ Thumbs.db
 
 # Design-iteration screenshots (verification artifacts, not deliverables)
 screenshots/
+
+# Reference captures — keep STYLE.md + tokens.json in git, not the heavy PNGs
+design-reference/**/*.png

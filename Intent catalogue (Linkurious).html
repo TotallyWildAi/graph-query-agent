@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Orchestration Console — Intent catalogue</title>
+<link rel="stylesheet" href="assets/linkurious-system.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<style>
+  html,body{ height:100%; }
+  body{ margin:0; }
+
+  /* search + filter bar */
+  .searchbar{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .search{ display:flex; align-items:center; gap:9px; border:1.5px solid var(--ink); border-radius: var(--r-sm); padding:8px 12px; background: var(--card); flex:1; min-width:220px; box-shadow: var(--shadow-press); }
+  .search input{ border:none; outline:none; background:transparent; font:inherit; font-size:13px; color: var(--ink); flex:1; }
+  .search i{ color: var(--ink-faint); }
+  .filt{ display:inline-flex; border:1.5px solid var(--ink); border-radius: var(--r-sm); overflow:hidden; flex:none; }
+  .filt button{ font-family: var(--font-mono); font-size:11px; letter-spacing:.04em; text-transform:uppercase; padding:8px 12px; border:none; background: var(--card); color: var(--ink-soft); cursor:pointer; }
+  .filt button+button{ border-left:1.5px solid var(--ink); }
+  .filt button.on{ background: var(--ink); color: var(--card); }
+
+  /* intent list rows */
+  .intent-row{ width:100%; text-align:left; border:1.5px solid var(--ink-line); border-radius: var(--r-md); background: var(--card); padding:14px 16px; cursor:pointer; display:flex; flex-direction:column; gap:7px; transition: background var(--dur-fast) var(--ease); }
+  .intent-row:hover{ background: rgba(27,30,44,.03); }
+  .intent-row.sel{ border:1.5px solid var(--ink); box-shadow: var(--shadow-rest); }
+  .intent-row.write{ background: var(--write-soft); border-color: var(--write); }
+  .intent-row.write.sel{ box-shadow: 2px 3px 0 rgba(201,138,43,.22); }
+  .intent-row .top{ display:flex; align-items:center; gap:10px; }
+  .intent-row .nm{ font-family: var(--font-mono); font-size:14px; font-weight:500; }
+  .intent-row .ver{ font-family: var(--font-mono); font-size:11px; color: var(--ink-faint); }
+  .intent-row .desc{ font-size:12.5px; color: var(--ink-soft); }
+  .intent-row .params{ font-family: var(--font-mono); font-size:11px; color: var(--ink-faint); display:flex; align-items:center; gap:6px; }
+
+  /* detail */
+  .det-head{ display:flex; flex-direction:column; gap:10px; padding-bottom:18px; border-bottom:1.5px solid var(--ink-line); }
+  .det-title{ font-family: var(--font-mono); font-size:18px; font-weight:500; }
+  .ptable{ width:100%; border-collapse:collapse; font-size:12.5px; }
+  .ptable th{ font-family: var(--font-mono); font-size:10px; letter-spacing:.06em; text-transform:uppercase; color: var(--ink-faint); text-align:left; padding:8px 10px; border-bottom:1.5px solid var(--ink); }
+  .ptable td{ padding:9px 10px; border-bottom:1px solid var(--ink-line); }
+  .ptable tr:last-child td{ border-bottom:none; }
+  .ptable .mono{ font-family: var(--font-mono); }
+  .ptable .req{ color: var(--marker); font-family: var(--font-mono); font-size:11px; }
+
+  .det-sec{ margin-top:20px; }
+  .enrich{ display:flex; align-items:center; gap:10px; padding:11px 14px; border:1.5px solid var(--ink-line); border-radius: var(--r-sm); background: var(--card); font-size:12.5px; }
+  .enrich i{ color: var(--write-ink); font-size:18px; }
+
+  .vhist{ display:flex; flex-direction:column; gap:0; }
+  .vrow{ display:flex; align-items:flex-start; gap:12px; padding:9px 0; position:relative; padding-left:24px; }
+  .vrow:not(:last-child)::before{ content:""; position:absolute; left:5px; top:18px; bottom:-4px; width:1.5px; background: var(--ink-line); }
+  .vrow .vd{ position:absolute; left:0; top:11px; width:11px; height:11px; border-radius:50%; border:1.5px solid var(--ink); background: var(--card); }
+  .vrow.cur .vd{ background: var(--ink); }
+  .vrow .vmeta{ font-family: var(--font-mono); font-size:12px; }
+  .vrow .vnote{ font-size:12px; color: var(--ink-soft); }
+
+  .approval{ border:1.5px dashed var(--write); background: var(--write-soft); border-radius: var(--r-sm); padding:14px 16px; display:flex; gap:11px; align-items:flex-start; }
+  .approval i{ color: var(--write-ink); font-size:20px; margin-top:1px; }
+</style>
+</head>
+<body>
+<div class="oc">
+  <div class="oc-app">
+
+    <aside class="oc-rail">
+      <div class="oc-brand"><img src="assets/tw-stamp-light.svg" alt=""><div class="wm">Console<small>orchestration</small></div></div>
+      <div class="oc-navgrp">Workspace</div>
+      <a class="oc-nav" href="Console - Ask.html" style="text-decoration:none;"><i class="ph ph-terminal-window"></i> Ask</a>
+      <a class="oc-nav" href="Results - Lineage.html" style="text-decoration:none;"><i class="ph ph-table"></i> Results</a>
+      <a class="oc-nav" href="Trace - Audit.html" style="text-decoration:none;"><i class="ph ph-tree-structure"></i> Trace</a>
+      <div class="oc-navgrp">Reference</div>
+      <div class="oc-nav on"><i class="ph ph-list-checks"></i> Intent catalogue</div>
+      <a class="oc-nav" href="Tool registry.html" style="text-decoration:none;"><i class="ph ph-plugs"></i> Tool registry</a>
+      <a class="oc-nav" href="Graph schema.html" style="text-decoration:none;"><i class="ph ph-graph"></i> Graph schema</a>
+      <div class="oc-rail-foot">Reviewed, version-controlled capabilities. This list is the whole surface — nothing runs that isn't here.</div>
+    </aside>
+
+    <div class="oc-main">
+
+      <div class="oc-top">
+        <span class="crumb"><b>Intent catalogue</b></span>
+        <span class="oc-spacer"></span>
+        <span class="oc-meta"><b>4</b> registered · <b>3</b> read · <b>1</b> write</span>
+      </div>
+
+      <div class="oc-split">
+
+        <!-- ---------- WORK PANE: searchable list ---------- -->
+        <div class="oc-work">
+
+          <div class="searchbar">
+            <div class="search"><i class="ph ph-magnifying-glass"></i><input placeholder="search intents…" oninput="filterList(this.value)"></div>
+            <div class="filt" role="group" aria-label="Filter by r/w">
+              <button class="on" data-f="all" onclick="setFilter('all')">All</button>
+              <button data-f="read" onclick="setFilter('read')">Read</button>
+              <button data-f="write" onclick="setFilter('write')">Write</button>
+            </div>
+          </div>
+          <div class="oc-sub" style="font-size:11.5px; margin:-6px 0 2px; display:flex; align-items:center; gap:8px;">
+            <i class="ph ph-tag" style="font-size:13px;"></i> tags: <span style="font-family:var(--font-mono);">maintenance</span> · <span style="font-family:var(--font-mono);">assets</span> · <span style="font-family:var(--font-mono);">work-orders</span>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:12px;" id="list">
+            <button class="intent-row sel" data-rw="read" data-intent="overdue" onclick="select('overdue')">
+              <div class="top"><span class="nm">assets_overdue_for_task</span><span class="ver">@3</span><span class="oc-spacer"></span><span class="oc-pill read"><span class="dot"></span>read</span></div>
+              <div class="desc">Assets at a site whose preventive maintenance task is overdue.</div>
+              <div class="params"><i class="ph ph-sliders-horizontal"></i> site_id, task_code</div>
+            </button>
+
+            <button class="intent-row" data-rw="read" data-intent="bysite" onclick="select('bysite')">
+              <div class="top"><span class="nm">assets_by_site</span><span class="ver">@2</span><span class="oc-spacer"></span><span class="oc-pill read"><span class="dot"></span>read</span></div>
+              <div class="desc">Every asset located at a site.</div>
+              <div class="params"><i class="ph ph-sliders-horizontal"></i> site_id</div>
+            </button>
+
+            <button class="intent-row" data-rw="read" data-intent="health" onclick="select('health')">
+              <div class="top"><span class="nm">asset_health_summary</span><span class="ver">@1</span><span class="oc-spacer"></span><span class="oc-pill read"><span class="dot"></span>read</span></div>
+              <div class="desc">Condition and health-score rollup across a site.</div>
+              <div class="params"><i class="ph ph-sliders-horizontal"></i> site_id</div>
+            </button>
+
+            <button class="intent-row write" data-rw="write" data-intent="createwo" onclick="select('createwo')">
+              <div class="top"><span class="nm">create_work_order</span><span class="ver">@1</span><span class="oc-spacer"></span><span class="oc-pill write"><span class="dot"></span>write</span></div>
+              <div class="desc">Create a CMMS work order against an asset.</div>
+              <div class="params"><i class="ph ph-sliders-horizontal"></i> asset_id, task_code, priority &nbsp;·&nbsp; <span style="color:var(--write-ink);">approval required</span></div>
+            </button>
+          </div>
+
+        </div>
+
+        <!-- ---------- EVIDENCE PANE: intent detail ---------- -->
+        <div class="oc-evidence">
+          <div class="oc-ev-head">
+            <i class="ph ph-file-text" style="font-size:18px;"></i>
+            <span class="oc-ev-title">Intent definition</span>
+            <span class="oc-spacer"></span>
+            <span class="oc-pill dim" id="detTag"><span class="dot"></span>read · @3</span>
+          </div>
+          <div class="oc-ev-body" id="detail"><!-- filled by JS --></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const DET = {
+    overdue: () => `
+      <div class="det-head">
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+          <span class="det-title">assets_overdue_for_task</span>
+          <span class="oc-pill read"><span class="dot"></span>read</span>
+          <span class="oc-meta">@3 · current</span>
+        </div>
+        <div class="oc-sub">List assets at a site whose preventive maintenance task is overdue, ordered by due date. The console's most-used capability.</div>
+      </div>
+
+      <div class="det-sec">
+        <div class="oc-detail-label" style="margin-bottom:8px;">Parameter schema</div>
+        <table class="ptable">
+          <thead><tr><th>name</th><th>type</th><th>required</th><th>notes</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">site_id</td><td class="mono">string</td><td><span class="req">required</span></td><td class="oc-sub">a registered Site.id</td></tr>
+            <tr><td class="mono">task_code</td><td class="mono">string</td><td><span class="req">required</span></td><td class="oc-sub">allow-listed task code</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="det-sec">
+        <div style="display:flex; align-items:center; gap:9px; margin-bottom:8px;">
+          <span class="oc-detail-label" style="margin:0;">Parameterized Cypher template</span>
+          <span class="oc-ro">read-only</span>
+          <span class="oc-spacer"></span>
+          <span class="oc-sub" style="font-size:11px; font-family:var(--font-mono);">reviewed · cost &amp; row guard</span>
+        </div>
+        <div class="oc-code"><span class="kw">MATCH</span> (s:Site {id: <span class="pm">$site_id</span>})-[:CONTAINS]->(a:Asset)
+<span class="kw">MATCH</span> (a)&lt;-[:TARGETS]-(wo:WorkOrder)-[:EXECUTES]->(t:MaintenanceTask {code: <span class="pm">$task_code</span>})
+<span class="kw">WHERE</span> wo.due_date &lt; date() <span class="kw">AND</span> wo.status &lt;&gt; <span class="str">'CLOSED'</span>
+<span class="kw">RETURN</span> a.id, a.name, wo.due_date, wo.status <span class="kw">ORDER BY</span> wo.due_date</div>
+      </div>
+
+      <div class="det-sec">
+        <div class="oc-detail-label" style="margin-bottom:8px;">Optional enrichment</div>
+        <div class="enrich"><i class="ph ph-snowflake"></i><div><div style="font-weight:600; font-family:var(--font-mono); font-size:12.5px;">snowflake_runtime_hours@2.1</div><div class="oc-sub" style="font-size:11.5px;">adds a runtime_hrs column per asset · read-only tool</div></div><span class="oc-spacer"></span><span class="oc-ro">read</span></div>
+      </div>
+
+      <div class="det-sec">
+        <div class="oc-detail-label" style="margin-bottom:10px;">Version history</div>
+        <div class="vhist">
+          <div class="vrow cur"><span class="vd"></span><div><div class="vmeta">@3 · 2026-05-02</div><div class="vnote">Added status filter (exclude CLOSED); added row guard.</div></div></div>
+          <div class="vrow"><span class="vd"></span><div><div class="vmeta">@2 · 2026-02-14</div><div class="vnote">Parameterized task_code (was hard-coded LUBE-01).</div></div></div>
+          <div class="vrow"><span class="vd"></span><div><div class="vmeta">@1 · 2025-11-30</div><div class="vnote">Initial registration.</div></div></div>
+        </div>
+      </div>
+
+      <div class="lin-foot" style="margin-top:20px; padding-top:16px; border-top:1.5px solid var(--ink-line); display:flex; gap:12px; align-items:center;">
+        <a class="oc-btn sm" href="Console - Ask.html"><i class="ph ph-play"></i> Use in Ask</a>
+        <span class="oc-sub" style="font-size:11.5px;">reviewed &amp; version-controlled · changes go through review</span>
+      </div>`,
+
+    bysite: () => simpleRead('assets_by_site','@2','All assets located at a site, regardless of condition or maintenance schedule.',
+      [['site_id','string','required','a registered Site.id']],
+      `<span class="kw">MATCH</span> (s:Site {id: <span class="pm">$site_id</span>})-[:CONTAINS]->(a:Asset)
+<span class="kw">RETURN</span> a.id, a.name, a.type, a.location <span class="kw">ORDER BY</span> a.name`),
+
+    health: () => simpleRead('asset_health_summary','@1','Condition and health-score rollup across a site, aggregating sensor readings per asset.',
+      [['site_id','string','required','a registered Site.id']],
+      `<span class="kw">MATCH</span> (s:Site {id: <span class="pm">$site_id</span>})-[:CONTAINS]->(a:Asset)
+<span class="kw">OPTIONAL MATCH</span> (a)-[:HAS_SENSOR]->(sensor:Sensor)
+<span class="kw">RETURN</span> a.id, a.name, a.health_score, count(sensor) <span class="kw">AS</span> sensors`),
+
+    createwo: () => `
+      <div class="det-head" style="border-color: var(--write);">
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+          <span class="det-title">create_work_order</span>
+          <span class="oc-pill write"><span class="dot"></span>write · side-effect</span>
+          <span class="oc-meta">@1 · current</span>
+        </div>
+        <div class="oc-sub">Creates a maintenance work order in the CMMS against an asset. <b>This capability changes external state.</b></div>
+      </div>
+
+      <div class="det-sec">
+        <div class="approval"><i class="ph ph-shield-warning"></i><div><div style="font-weight:600; font-size:13.5px;">Approval required before execution</div><div class="oc-sub" style="margin-top:4px;">A human must confirm the action. The call carries an idempotency-key, runs under elevated scope, and is always written to the audit log.</div></div></div>
+      </div>
+
+      <div class="det-sec">
+        <div class="oc-detail-label" style="margin-bottom:8px;">Parameter schema</div>
+        <table class="ptable">
+          <thead><tr><th>name</th><th>type</th><th>required</th><th>notes</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">asset_id</td><td class="mono">string</td><td><span class="req">required</span></td><td class="oc-sub">target Asset.id</td></tr>
+            <tr><td class="mono">task_code</td><td class="mono">string</td><td><span class="req">required</span></td><td class="oc-sub">allow-listed task code</td></tr>
+            <tr><td class="mono">priority</td><td class="mono">enum</td><td><span class="req">required</span></td><td class="oc-sub">LOW · MEDIUM · HIGH</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="det-sec">
+        <div style="display:flex; align-items:center; gap:9px; margin-bottom:8px;">
+          <span class="oc-detail-label" style="margin:0;">Backing tool</span>
+          <span class="oc-wo">write</span>
+        </div>
+        <div class="enrich" style="border-color: var(--write); background: var(--write-soft);"><i class="ph ph-wrench"></i><div><div style="font-weight:600; font-family:var(--font-mono); font-size:12.5px;">cmms_create_work_order@1.2.0</div><div class="oc-sub" style="font-size:11.5px;">side_effect: true · idempotent: false (key required)</div></div><span class="oc-spacer"></span><a class="oc-link" href="Tool registry.html" style="font-size:11.5px;">manifest →</a></div>
+      </div>
+
+      <div class="det-sec">
+        <div class="oc-detail-label" style="margin-bottom:10px;">Version history</div>
+        <div class="vhist">
+          <div class="vrow cur"><span class="vd"></span><div><div class="vmeta">@1 · 2026-04-18</div><div class="vnote">Initial registration. Gated behind approval from day one.</div></div></div>
+        </div>
+      </div>
+
+      <div class="lin-foot" style="margin-top:20px; padding-top:16px; border-top:1.5px solid var(--ink-line); display:flex; gap:12px; align-items:center;">
+        <button class="oc-btn amber" onclick="alert('Write capabilities require explicit approval at run time — see the approval modal on the Ask/Trace flow.')"><i class="ph ph-shield-check"></i> Requires approval to run</button>
+      </div>`
+  };
+
+  function simpleRead(name, ver, desc, params, cypher){
+    return `
+      <div class="det-head">
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+          <span class="det-title">${name}</span><span class="oc-pill read"><span class="dot"></span>read</span><span class="oc-meta">${ver} · current</span>
+        </div>
+        <div class="oc-sub">${desc}</div>
+      </div>
+      <div class="det-sec">
+        <div class="oc-detail-label" style="margin-bottom:8px;">Parameter schema</div>
+        <table class="ptable"><thead><tr><th>name</th><th>type</th><th>required</th><th>notes</th></tr></thead><tbody>
+          ${params.map(p=>`<tr><td class="mono">${p[0]}</td><td class="mono">${p[1]}</td><td><span class="req">${p[2]}</span></td><td class="oc-sub">${p[3]}</td></tr>`).join('')}
+        </tbody></table>
+      </div>
+      <div class="det-sec">
+        <div style="display:flex; align-items:center; gap:9px; margin-bottom:8px;"><span class="oc-detail-label" style="margin:0;">Parameterized Cypher template</span><span class="oc-ro">read-only</span></div>
+        <div class="oc-code">${cypher}</div>
+      </div>
+      <div class="lin-foot" style="margin-top:20px; padding-top:16px; border-top:1.5px solid var(--ink-line); display:flex; gap:12px; align-items:center;">
+        <a class="oc-btn sm" href="Console - Ask.html"><i class="ph ph-play"></i> Use in Ask</a>
+        <span class="oc-sub" style="font-size:11.5px;">reviewed &amp; version-controlled</span>
+      </div>`;
+  }
+
+  const META = {
+    overdue:{rw:'read', ver:'@3'}, bysite:{rw:'read', ver:'@2'}, health:{rw:'read', ver:'@1'}, createwo:{rw:'write', ver:'@1'}
+  };
+
+  function select(id){
+    document.querySelectorAll('.intent-row').forEach(r=>r.classList.toggle('sel', r.dataset.intent===id));
+    document.getElementById('detail').innerHTML = DET[id]();
+    const tag = document.getElementById('detTag');
+    const m = META[id];
+    tag.className = 'oc-pill ' + (m.rw==='write'?'write':'dim');
+    tag.innerHTML = '<span class="dot"></span>'+m.rw+' · '+m.ver;
+    document.getElementById('detail').scrollTop = 0;
+  }
+
+  function setFilter(f){
+    document.querySelectorAll('.filt button').forEach(b=>b.classList.toggle('on', b.dataset.f===f));
+    document.querySelectorAll('.intent-row').forEach(r=>{
+      r.style.display = (f==='all' || r.dataset.rw===f) ? 'flex':'none';
+    });
+  }
+  function filterList(q){
+    q=q.toLowerCase();
+    document.querySelectorAll('.intent-row').forEach(r=>{
+      r.style.display = r.textContent.toLowerCase().includes(q) ? 'flex':'none';
+    });
+  }
+
+  // init
+  select('overdue');
+</script>
+</body>
+</html>
