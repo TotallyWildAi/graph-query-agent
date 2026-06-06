@@ -95,13 +95,14 @@
     <aside class="oc-rail">
       <div class="oc-brand"><img src="assets/tw-stamp-light.svg" alt=""><div class="wm">Console<small>orchestration</small></div></div>
       <div class="oc-navgrp">Workspace</div>
-      <a class="oc-nav" href="Console - Ask.html" style="text-decoration:none;"><i class="ph ph-terminal-window"></i> Ask</a>
+      <a class="oc-nav" href="Console - Ask (Linkurious).html" style="text-decoration:none;"><i class="ph ph-terminal-window"></i> Ask</a>
       <div class="oc-nav on"><i class="ph ph-table"></i> Results</div>
       <div class="oc-nav"><i class="ph ph-clock-counter-clockwise"></i> History</div>
       <div class="oc-navgrp">Reference</div>
-      <a class="oc-nav" href="Intent catalogue.html" style="text-decoration:none;"><i class="ph ph-list-checks"></i> Intent catalogue</a>
-      <a class="oc-nav" href="Tool registry.html" style="text-decoration:none;"><i class="ph ph-plugs"></i> Tool registry</a>
-      <a class="oc-nav" href="Graph schema.html" style="text-decoration:none;"><i class="ph ph-graph"></i> Graph schema</a>
+      <a class="oc-nav" href="Intent catalogue (Linkurious).html" style="text-decoration:none;"><i class="ph ph-list-checks"></i> Intent catalogue</a>
+      <a class="oc-nav" href="Tool registry (Linkurious).html" style="text-decoration:none;"><i class="ph ph-plugs"></i> Tool registry</a>
+      <a class="oc-nav" href="Graph schema (Linkurious).html" style="text-decoration:none;"><i class="ph ph-graph"></i> Graph schema</a>
+      <a class="oc-nav" href="Graph explorer - Sigma (Linkurious).html" style="text-decoration:none;"><i class="ph ph-share-network"></i> Graph explorer</a>
       <div class="oc-rail-foot">Read-only by default. Writes are gated, logged capabilities.</div>
     </aside>
 
@@ -110,7 +111,7 @@
 
       <!-- top bar -->
       <div class="oc-top">
-        <a class="oc-link" href="Console - Ask.html" style="font-size:12px;"><i class="ph ph-arrow-left"></i> Back to Ask</a>
+        <a class="oc-link" href="Console - Ask (Linkurious).html" style="font-size:12px;"><i class="ph ph-arrow-left"></i> Back to Ask</a>
         <span class="crumb">/ <b>Results</b></span>
         <span class="oc-seg" role="group" aria-label="Scenario">
           <button id="segRes" class="on" onclick="setScenario('results')">Results</button>
@@ -140,7 +141,7 @@
             <div style="display:flex; align-items:center; gap:10px;">
               <span class="oc-btn sm" onclick="replay()"><i class="ph ph-arrow-counter-clockwise"></i> Replay</span>
               <span class="oc-btn ghost sm" onclick="exportCsv()"><i class="ph ph-download-simple"></i> CSV</span>
-              <a class="oc-link" href="Trace - Audit.html"><i class="ph ph-tree-structure"></i> View full trace</a>
+              <a class="oc-link" href="Trace - Audit (Linkurious).html"><i class="ph ph-tree-structure"></i> View full trace</a>
             </div>
           </div>
 
@@ -207,7 +208,7 @@
               <div class="oc-sub" style="max-width:420px;">The query ran successfully and is fully traceable. Either nothing is overdue, or the parameters need adjusting.</div>
               <div style="display:flex; gap:10px; margin-top:6px;">
                 <span class="oc-btn sm" onclick="showQueryRan()"><i class="ph ph-code"></i> View the query that ran</span>
-                <a class="oc-btn ghost sm" href="Console - Ask.html"><i class="ph ph-sliders-horizontal"></i> Adjust parameters</a>
+                <a class="oc-btn ghost sm" href="Console - Ask (Linkurious).html"><i class="ph ph-sliders-horizontal"></i> Adjust parameters</a>
               </div>
             </div>
           </div>
@@ -306,7 +307,7 @@
       </div>
 
       <div class="lin-foot">
-        <a class="oc-link" href="Trace - Audit.html"><i class="ph ph-tree-structure"></i> View full trace</a>
+        <a class="oc-link" href="Trace - Audit (Linkurious).html"><i class="ph ph-tree-structure"></i> View full trace</a>
         <span class="oc-sub" style="font-size:11.5px;">Step 3 of req_7f3a9c21</span>
       </div>
     `);
@@ -356,7 +357,7 @@
       </div>
 
       <div class="lin-foot">
-        <a class="oc-link" href="Trace - Audit.html"><i class="ph ph-tree-structure"></i> View full trace</a>
+        <a class="oc-link" href="Trace - Audit (Linkurious).html"><i class="ph ph-tree-structure"></i> View full trace</a>
         <span class="oc-link" onclick="alert('\u2192 Tool registry → snowflake_runtime_hours@2.1 manifest (built later in the set).')"><i class="ph ph-plugs"></i> Tool manifest</span>
       </div>
     `);
@@ -380,7 +381,7 @@
 <span class="kw">WHERE</span> wo.due_date &lt; date() <span class="kw">AND</span> wo.status &lt;&gt; <span class="str">'CLOSED'</span>
 <span class="kw">RETURN</span> a.id, a.name, wo.due_date, wo.status</div>
       </div>
-      <div class="lin-foot"><a class="oc-link" href="Trace - Audit.html"><i class="ph ph-tree-structure"></i> View full trace</a></div>`;
+      <div class="lin-foot"><a class="oc-link" href="Trace - Audit (Linkurious).html"><i class="ph ph-tree-structure"></i> View full trace</a></div>`;
   }
 
   function resetDrawer(){

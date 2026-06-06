@@ -63,20 +63,21 @@
     <aside class="oc-rail">
       <div class="oc-brand"><img src="assets/tw-stamp-light.svg" alt=""><div class="wm">Console<small>orchestration</small></div></div>
       <div class="oc-navgrp">Workspace</div>
-      <a class="oc-nav" href="Console - Ask.html" style="text-decoration:none;"><i class="ph ph-terminal-window"></i> Ask</a>
-      <a class="oc-nav" href="Results - Lineage.html" style="text-decoration:none;"><i class="ph ph-table"></i> Results</a>
-      <a class="oc-nav" href="Trace - Audit.html" style="text-decoration:none;"><i class="ph ph-tree-structure"></i> Trace</a>
+      <a class="oc-nav" href="Console - Ask (Linkurious).html" style="text-decoration:none;"><i class="ph ph-terminal-window"></i> Ask</a>
+      <a class="oc-nav" href="Results - Lineage (Linkurious).html" style="text-decoration:none;"><i class="ph ph-table"></i> Results</a>
+      <a class="oc-nav" href="Trace - Audit (Linkurious).html" style="text-decoration:none;"><i class="ph ph-tree-structure"></i> Trace</a>
       <div class="oc-navgrp">Reference</div>
-      <a class="oc-nav" href="Intent catalogue.html" style="text-decoration:none;"><i class="ph ph-list-checks"></i> Intent catalogue</a>
-      <a class="oc-nav" href="Tool registry.html" style="text-decoration:none;"><i class="ph ph-plugs"></i> Tool registry</a>
-      <a class="oc-nav" href="Graph schema.html" style="text-decoration:none;"><i class="ph ph-graph"></i> Graph schema</a>
+      <a class="oc-nav" href="Intent catalogue (Linkurious).html" style="text-decoration:none;"><i class="ph ph-list-checks"></i> Intent catalogue</a>
+      <a class="oc-nav" href="Tool registry (Linkurious).html" style="text-decoration:none;"><i class="ph ph-plugs"></i> Tool registry</a>
+      <a class="oc-nav" href="Graph schema (Linkurious).html" style="text-decoration:none;"><i class="ph ph-graph"></i> Graph schema</a>
+      <a class="oc-nav" href="Graph explorer - Sigma (Linkurious).html" style="text-decoration:none;"><i class="ph ph-share-network"></i> Graph explorer</a>
       <div class="oc-rail-foot">The console asks rather than guesses. It only runs reviewed, registered capabilities.</div>
     </aside>
 
     <div class="oc-main">
 
       <div class="oc-top">
-        <a class="oc-link" href="Console - Ask.html" style="font-size:12px;"><i class="ph ph-arrow-left"></i> Back to Ask</a>
+        <a class="oc-link" href="Console - Ask (Linkurious).html" style="font-size:12px;"><i class="ph ph-arrow-left"></i> Back to Ask</a>
         <span class="crumb">/ Ask / <b>Clarify</b></span>
         <span class="oc-seg" role="group" aria-label="Scenario">
           <button id="segCand" class="on" onclick="setScenario('cand')">Ambiguous</button>
@@ -159,8 +160,8 @@
               <div class="ttl">No registered capability matches that request</div>
               <div class="oc-sub" style="max-width:440px;">The console only runs reviewed, registered intents — it won't improvise a query to fit. Browse what's available, or rephrase your request.</div>
               <div style="display:flex; gap:10px; margin-top:4px;">
-                <a class="oc-btn sm" href="Intent catalogue.html"><i class="ph ph-list-checks"></i> Open intent catalogue</a>
-                <a class="oc-btn ghost sm" href="Console - Ask.html"><i class="ph ph-pencil-simple"></i> Rephrase request</a>
+                <a class="oc-btn sm" href="Intent catalogue (Linkurious).html"><i class="ph ph-list-checks"></i> Open intent catalogue</a>
+                <a class="oc-btn ghost sm" href="Console - Ask (Linkurious).html"><i class="ph ph-pencil-simple"></i> Rephrase request</a>
               </div>
             </div>
           </div>
@@ -267,7 +268,7 @@
 
     if(allValid){
       html += `<div class="gate"><i class="ph ph-check-circle" style="color:var(--read-ink);"></i><span>All parameters resolved. Ready to run.</span></div>
-        <div style="display:flex; gap:12px; align-items:center;"><a class="oc-btn primary" href="Console - Ask.html"><i class="ph ph-play"></i> Run ${I.name}</a><span class="oc-sub" style="font-size:11.5px;">read-only query</span></div>`;
+        <div style="display:flex; gap:12px; align-items:center;"><a class="oc-btn primary" href="Console - Ask (Linkurious).html"><i class="ph ph-play"></i> Run ${I.name}</a><span class="oc-sub" style="font-size:11.5px;">read-only query</span></div>`;
     } else {
       html += `<div style="display:flex; gap:12px; align-items:center;"><button class="oc-btn primary" id="runBtn" disabled><i class="ph ph-play"></i> Run</button><span class="oc-sub" style="font-size:11.5px;" id="runNote">Enter <b>${missing[0].key}</b> to enable. Nothing runs until parameters validate.</span></div>`;
     }
