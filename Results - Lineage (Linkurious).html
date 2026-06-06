@@ -20,10 +20,12 @@
   .res-head .title{ font-size:18px; font-weight:600; letter-spacing:-.01em; }
   .res-head .meta{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:8px; }
 
+  /* results table is 6 columns — widen the work pane so runtime hrs isn't clipped */
+  .oc-split{ grid-template-columns: minmax(600px, 1.4fr) .9fr; }
   /* results table */
-  .res-table-wrap{ border:1px solid var(--ink-line); border-radius: var(--r-md); overflow:hidden; box-shadow: var(--shadow-rest); background: var(--card); }
+  .res-table-wrap{ border:1px solid var(--ink-line); border-radius: var(--r-md); overflow-x:auto; box-shadow: var(--shadow-rest); background: var(--card); }
   table.res{ width:100%; border-collapse:collapse; font-size:13px; }
-  table.res thead th{ font-family: var(--font-mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase; color: var(--ink-faint); text-align:left; padding:11px 14px; border-bottom:1px solid var(--ink-line); background: var(--paper-warm); white-space:nowrap; }
+  table.res thead th{ font-family: var(--font-mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase; color: var(--ink-faint); text-align:left; padding:10px 12px; border-bottom:1px solid var(--ink-line); background: var(--paper-warm); white-space:nowrap; }
   table.res thead th.tool-col{ color: var(--ink-soft); }
   table.res thead th .toolflag{ display:inline-flex; align-items:center; gap:5px; color: var(--ink-soft); border-bottom:1.5px dashed var(--ink-soft); padding-bottom:1px; }
   table.res tbody td{ padding:0; border-bottom:1px solid var(--ink-line); vertical-align:middle; }
@@ -31,7 +33,7 @@
   table.res tbody tr.sel{ background: var(--accent-cyan-soft); }
 
   /* a provenance-clickable cell */
-  .cell{ width:100%; display:flex; align-items:center; gap:8px; padding:12px 14px; background:transparent; border:none; font:inherit; color:var(--ink); text-align:left; cursor:pointer; position:relative; }
+  .cell{ width:100%; display:flex; align-items:center; gap:8px; padding:11px 12px; background:transparent; border:none; font:inherit; color:var(--ink); text-align:left; cursor:pointer; position:relative; }
   .cell:hover{ background: rgba(27,30,44,.04); }
   .cell:focus-visible{ outline:2px solid var(--accent); outline-offset:-2px; }
   .cell .info{ opacity:0; color: var(--ink-faint); font-size:13px; margin-left:auto; transition: opacity var(--dur-fast) var(--ease); flex:none; }
@@ -48,7 +50,7 @@
 
   .ovd{ font-weight:600; color: var(--ink); }
   .ovd.high{ color: var(--marker); font-weight:700; }
-  .runtime{ font-family: var(--font-mono); font-size:12.5px; }
+  .runtime{ font-family: var(--font-mono); font-size:12.5px; white-space:nowrap; }
 
   /* status pill (neutral states, not read/write) */
   .stat{ display:inline-flex; align-items:center; gap:6px; font-family: var(--font-mono); font-size:10px; letter-spacing:.05em; text-transform:uppercase; border-radius:999px; padding:3px 9px; border:1.5px solid var(--ink-line); color: var(--ink-soft); background: var(--card); }
