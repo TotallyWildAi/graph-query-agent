@@ -14,3 +14,6 @@ screenshots/
 
 # Build deps (the built bundle in assets/ is committed; node_modules is not)
 node_modules/
+
+# Reference/iteration screenshots — not deliverables
+design-reference/**/*.png
