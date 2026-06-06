@@ -23,15 +23,18 @@ These are **HTML design artifacts** (open in a browser). No build step.
 |---|---|
 | Screen map + lo-fi wireframes (all 7) | ✅ done |
 | Console / Ask | ✅ hi-fi locked & verified |
-| Results + lineage | ⬜ pending |
-| Clarification / disambiguation | ⬜ pending |
-| Trace / audit | ⬜ pending |
-| Intent catalogue | ⬜ pending |
-| Tool registry | ⬜ pending |
-| Graph schema browser | ⏸ deferred (optional in spec) |
+| Results + lineage | ✅ hi-fi locked & verified |
+| Trace / audit | ✅ hi-fi locked & verified |
+| Clarification / disambiguation | ✅ hi-fi locked & verified |
+| Intent catalogue | ✅ hi-fi locked & verified |
+| Tool registry | ✅ hi-fi locked & verified |
+| Graph schema browser | ✅ hi-fi (overview / node / relationship states) |
+| Write-action approval gate | ✅ hi-fi (in-flow modal on Console / Ask) |
 
-The **design system is locked** (`assets/console-system.css`). The remaining
-five screens inherit the same master-detail pattern.
+All **seven screens** plus the **write-approval gate** are built on one locked
+design system (`assets/console-system.css`), sharing the master-detail pattern.
+The write gate lives inside the Ask flow (Write-action scenario) per the
+"state/modal, not a standalone screen" decision.
 
 ---
 
@@ -39,6 +42,12 @@ five screens inherit the same master-detail pattern.
 
 ```
 Console - Ask.html              ⭐ hi-fi, locked — the reference screen
+Results - Lineage.html          hi-fi — results table + lineage drawer (evidence face 1)
+Trace - Audit.html              hi-fi — audit timeline + step inspector (evidence face 2)
+Clarification.html              hi-fi — candidate intents + parameter completion
+Intent catalogue.html           hi-fi — registered capabilities, read + write detail
+Tool registry.html              hi-fi — tool manifests, health + observability
+Graph schema.html               hi-fi — graph model: labels, relationships, governance
 Console Explorations.html       3 layout directions on a compare canvas (A/B/C)
 wireframes/
   Orchestration Console - Wireframes.html   grayscale lo-fi, all 7 screens + screen map

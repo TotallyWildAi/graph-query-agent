@@ -22,6 +22,31 @@
   .oc-cand .nm{ font-family: var(--font-mono); font-size:12.5px; }
   .oc-cand .cf{ font-family: var(--font-mono); font-size:11px; color: var(--ink-faint); }
   .work-section{ display:flex; flex-direction:column; gap:10px; }
+
+  /* ===== write-action approval gate ===== */
+  .oc-modal-backdrop{ position:fixed; inset:0; background:rgba(27,30,44,.55); display:none; align-items:center; justify-content:center; z-index:var(--z-modal); padding:24px; }
+  .oc-modal-backdrop.open{ display:flex; }
+  .oc-modal{ width:min(580px,100%); max-height:92vh; overflow:auto; background:var(--card); border:1.5px solid var(--ink); border-radius:var(--r-lg); box-shadow:4px 6px 0 rgba(27,30,44,.18); }
+  .m-accent{ height:5px; background:var(--write); }
+  .m-head{ display:flex; align-items:center; gap:13px; padding:18px 22px; border-bottom:1.5px solid var(--hair); }
+  .m-head .ic{ width:40px; height:40px; border-radius:var(--r-sm); display:grid; place-items:center; background:var(--write-soft); border:1.5px solid var(--write); color:var(--write-ink); font-size:21px; flex:none; }
+  .m-title{ font-weight:700; font-size:16px; line-height:1.2; }
+  .m-sub{ font-size:12px; color:var(--ink-soft); margin-top:2px; }
+  .close-x{ margin-left:auto; cursor:pointer; color:var(--ink-faint); font-size:22px; background:none; border:none; display:grid; place-items:center; }
+  .close-x:hover{ color:var(--ink); }
+  .m-body{ padding:20px 22px; display:flex; flex-direction:column; gap:18px; }
+  .m-foot{ display:flex; align-items:center; gap:12px; padding:16px 22px; border-top:1.5px solid var(--hair); background:var(--paper-warm); }
+  .m-warn{ display:flex; gap:10px; align-items:flex-start; padding:12px 14px; border:1.5px solid var(--write); background:var(--write-soft); border-radius:var(--r-sm); }
+  .m-warn i{ color:var(--write-ink); font-size:18px; margin-top:1px; }
+  .m-warn b{ color:var(--write-ink); }
+  .m-check{ display:flex; gap:10px; align-items:center; font-size:13px; cursor:pointer; user-select:none; }
+  .m-check input{ width:18px; height:18px; accent-color:var(--write-ink); flex:none; }
+  .keyrow{ display:flex; align-items:center; gap:10px; font-family:var(--font-mono); font-size:12px; background:var(--card-sunk); border:1.5px solid var(--hair); border-radius:var(--r-sm); padding:9px 12px; }
+  .keyrow .kk{ color:var(--ink-faint); }
+  .keyrow .kv{ color:var(--ink); font-weight:500; word-break:break-all; }
+  /* write step markers in evidence plan */
+  .oc-step .mk.gate{ border-color:var(--write); color:var(--write-ink); box-shadow:0 0 0 4px var(--write-soft); }
+  .oc-step .mk.wdone{ background:var(--write); color:#fff; border-color:var(--write); }
 </style>
 </head>
 <body>
@@ -33,10 +58,12 @@
       <div class="oc-brand"><img src="assets/tw-stamp-light.svg" alt=""><div class="wm">Console<small>orchestration</small></div></div>
       <div class="oc-navgrp">Workspace</div>
       <div class="oc-nav on"><i class="ph ph-terminal-window"></i> Ask</div>
-      <div class="oc-nav"><i class="ph ph-clock-counter-clockwise"></i> History</div>
+      <a class="oc-nav" href="Results - Lineage.html" style="text-decoration:none;"><i class="ph ph-table"></i> Results</a>
+      <a class="oc-nav" href="Trace - Audit.html" style="text-decoration:none;"><i class="ph ph-tree-structure"></i> Trace</a>
       <div class="oc-navgrp">Reference</div>
-      <div class="oc-nav"><i class="ph ph-list-checks"></i> Intent catalogue</div>
-      <div class="oc-nav"><i class="ph ph-plugs"></i> Tool registry</div>
+      <a class="oc-nav" href="Intent catalogue.html" style="text-decoration:none;"><i class="ph ph-list-checks"></i> Intent catalogue</a>
+      <a class="oc-nav" href="Tool registry.html" style="text-decoration:none;"><i class="ph ph-plugs"></i> Tool registry</a>
+      <a class="oc-nav" href="Graph schema.html" style="text-decoration:none;"><i class="ph ph-graph"></i> Graph schema</a>
       <div class="oc-rail-foot">Read-only by default. Writes are gated, logged capabilities.</div>
     </aside>
 
@@ -49,6 +76,7 @@
         <span class="oc-seg" role="group" aria-label="Scenario">
           <button id="segHigh" class="on" onclick="setScenario('high')">High confidence</button>
           <button id="segLow" onclick="setScenario('low')">Ambiguous</button>
+          <button id="segWrite" onclick="setScenario('write')">Write action</button>
         </span>
         <span class="oc-spacer"></span>
         <span class="oc-meta">request_id <b id="reqId">req_7f3a9c21</b></span>
@@ -102,6 +130,49 @@
             </div>
           </div>
 
+          <!-- write-intent panel (amber) -->
+          <div id="writePanel" class="oc-card" style="padding:0; display:none; flex-direction:column; overflow:hidden;">
+            <div style="height:5px; background:var(--write);"></div>
+            <div style="padding:18px 20px; display:flex; flex-direction:column; gap:16px;">
+              <div style="display:flex; align-items:center; gap:10px;">
+                <span class="oc-eyebrow" style="margin:0;">Matched intent</span>
+                <span class="oc-spacer"></span>
+                <span class="oc-pill write"><span class="dot"></span>write · side-effect</span>
+              </div>
+              <div style="display:flex; flex-direction:column; gap:12px;">
+                <span class="oc-intent-name">create_work_order</span>
+                <div class="oc-conf">
+                  <span class="lbl">confidence</span>
+                  <span class="track"><span class="fill" style="width:88%;"></span></span>
+                  <span class="num">0.88</span>
+                </div>
+                <div class="m-warn"><i class="ph ph-warning"></i><div style="font-size:12.5px;"><b>This capability changes external state.</b> It creates a work order in the CMMS, so it cannot run automatically — it requires explicit approval.</div></div>
+              </div>
+
+              <div class="oc-divider"></div>
+
+              <div style="display:flex; flex-direction:column; gap:11px;">
+                <span class="oc-eyebrow" style="margin:0;">Parameters · editable before approval</span>
+                <span class="oc-chip" style="justify-content:space-between;"><span><span class="key">asset_id =</span> <span class="val">P-101</span></span><span style="display:flex; gap:8px; align-items:center;"><span class="resolved">"Pump P-101"</span><span class="edit"><i class="ph ph-pencil-simple"></i></span></span></span>
+                <span class="oc-chip" style="justify-content:space-between;"><span><span class="key">task_code =</span> <span class="val">LUBE-01</span></span><span style="display:flex; gap:8px; align-items:center;"><span class="resolved">"lubrication"</span><span class="edit"><i class="ph ph-pencil-simple"></i></span></span></span>
+                <span class="oc-chip" style="justify-content:space-between;"><span><span class="key">priority =</span> <span class="val">HIGH</span></span><span style="display:flex; gap:8px; align-items:center;"><span class="resolved">"high-priority"</span><span class="edit"><i class="ph ph-pencil-simple"></i></span></span></span>
+              </div>
+
+              <div style="display:flex; align-items:center; gap:12px; padding-top:4px;">
+                <span class="oc-btn amber" onclick="openApproval()"><i class="ph ph-shield-check"></i> Review &amp; approve write…</span>
+                <span class="oc-link" onclick="openTrace()"><i class="ph ph-tree-structure"></i> View full trace</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- write success summary -->
+          <div id="writeSuccess" class="oc-card" style="padding:16px 20px; display:none; align-items:center; gap:14px;">
+            <span class="oc-pill write"><span class="dot"></span>work order created</span>
+            <span class="oc-sub"><span style="font-family:var(--font-mono);">WO-20485</span> · approved by <span style="font-family:var(--font-mono);">n.forshteyn</span> · logged</span>
+            <span class="oc-spacer"></span>
+            <span class="oc-btn sm" onclick="openTrace()"><i class="ph ph-tree-structure"></i> View trace</span>
+          </div>
+
           <!-- low-confidence nudge -->
           <div id="nudgePanel" class="oc-card" style="padding:18px 20px; display:none; flex-direction:column; gap:14px;">
             <div class="oc-nudge">
@@ -136,8 +207,8 @@
         <!-- ---------- EVIDENCE PANE (right) ---------- -->
         <div class="oc-evidence">
           <div class="oc-ev-head">
-            <i class="ph ph-path" style="font-size:18px;"></i>
-            <span class="oc-ev-title">Execution plan</span>
+            <i class="ph ph-path" id="evIcon" style="font-size:18px;"></i>
+            <span class="oc-ev-title" id="evTitle">Execution plan</span>
             <span class="oc-spacer"></span>
             <span class="oc-pill dim" id="evStatus"><span class="dot"></span>5 steps · pending</span>
           </div>
@@ -254,10 +325,142 @@ runtime    snowflake_runtime_hours@2.1</div>
               </div>
 
             </div>
+
+            <!-- write plan (shown only in write scenario) -->
+            <div class="oc-steps" id="writeSteps" style="display:none;">
+              <div class="oc-step has-detail" data-wstep="1">
+                <span class="mk">1</span>
+                <div class="oc-step-head" onclick="this.parentElement.classList.toggle('is-open')">
+                  <div class="txt"><div class="t">Classify intent → create_work_order</div><div class="d">deterministic router · temperature 0</div></div>
+                  <i class="ph ph-caret-right caret"></i>
+                </div>
+                <div class="oc-step-detail">
+                  <div class="oc-detail-label">selected from registered intents</div>
+                  <div class="oc-code">selected  create_work_order   <span class="pm">0.88</span>   <span style="color:var(--write-ink);">[write]</span>
+next-best log_inspection      0.21</div>
+                </div>
+              </div>
+              <div class="oc-step has-detail" data-wstep="2">
+                <span class="mk">2</span>
+                <div class="oc-step-head" onclick="this.parentElement.classList.toggle('is-open')">
+                  <div class="txt"><div class="t">Extract &amp; validate parameters</div><div class="d">typed · schema + allow-list checked</div></div>
+                  <i class="ph ph-caret-right caret"></i>
+                </div>
+                <div class="oc-step-detail">
+                  <div class="oc-kv">
+                    <span class="k">asset_id</span><span class="v">"P-101" · string · required ✓</span>
+                    <span class="k">task_code</span><span class="v">"LUBE-01" · string · required ✓</span>
+                    <span class="k">priority</span><span class="v">"HIGH" · enum · required ✓</span>
+                  </div>
+                </div>
+              </div>
+              <div class="oc-step has-detail" data-wstep="3">
+                <span class="mk gate"><i class="ph ph-shield-warning"></i></span>
+                <div class="oc-step-head" onclick="this.parentElement.classList.toggle('is-open')">
+                  <div class="txt"><div class="t">Approval gate <span class="oc-wo">write</span></div><div class="d" id="gateStatus">awaiting human approval — execution is blocked</div></div>
+                  <i class="ph ph-caret-right caret"></i>
+                </div>
+                <div class="oc-step-detail">
+                  <div class="oc-sub" style="font-size:12px;">A side-effecting capability cannot run without explicit approval. Nothing is written until a human confirms.</div>
+                </div>
+              </div>
+              <div class="oc-step pending has-detail" data-wstep="4">
+                <span class="mk">4</span>
+                <div class="oc-step-head" onclick="this.parentElement.classList.toggle('is-open')">
+                  <div class="txt"><div class="t">Create work order <span style="font-family:var(--font-mono);">cmms_create_work_order@1.2.0</span> <span class="oc-wo">write · side-effect</span></div><div class="d">blocked until approved</div></div>
+                  <i class="ph ph-caret-right caret"></i>
+                </div>
+                <div class="oc-step-detail">
+                  <div class="oc-detail-label">payload (on approval)</div>
+                  <div class="oc-code">{ "asset_id": "P-101", "task_code": "LUBE-01",
+  "priority": "HIGH",
+  "idempotency_key": "wo-7f3a9c21-01" }</div>
+                </div>
+              </div>
+              <div class="oc-step pending has-detail" data-wstep="5">
+                <span class="mk">5</span>
+                <div class="oc-step-head" onclick="this.parentElement.classList.toggle('is-open')">
+                  <div class="txt"><div class="t">Assemble response &amp; attach lineage</div><div class="d">provenance + approval record stamped</div></div>
+                  <i class="ph ph-caret-right caret"></i>
+                </div>
+                <div class="oc-step-detail">
+                  <div class="oc-detail-label">on success</div>
+                  <div class="oc-code">work_order_id  WO-20485
+approved_by    n.forshteyn
+written_to     cmms · audit log</div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== WRITE-ACTION APPROVAL MODAL ===================== -->
+<div class="oc-modal-backdrop" id="approvalModal" role="dialog" aria-modal="true" aria-labelledby="apTitle">
+  <div class="oc-modal oc">
+    <div class="m-accent"></div>
+    <div class="m-head">
+      <span class="ic"><i class="ph ph-shield-warning"></i></span>
+      <div>
+        <div class="m-title" id="apTitle">Approve write action</div>
+        <div class="m-sub">This will change external state and cannot be undone automatically.</div>
+      </div>
+      <button class="close-x" onclick="closeApproval()" aria-label="Cancel"><i class="ph ph-x"></i></button>
+    </div>
+    <div class="m-body" id="apBody">
+      <div class="m-warn">
+        <i class="ph ph-warning"></i>
+        <div style="font-size:12.5px;"><b>Creates a record in the CMMS.</b> A new work order will be opened against Pump P-101. Review the details below before approving.</div>
+      </div>
+
+      <div>
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+          <span class="oc-eyebrow" style="margin:0;">Capability</span>
+          <span class="oc-spacer"></span>
+          <span class="oc-pill write"><span class="dot"></span>write · side-effect</span>
+        </div>
+        <div class="oc-intent-name" style="font-size:15px;">create_work_order <span style="color:var(--ink-faint); font-size:12px;">@1</span></div>
+      </div>
+
+      <div>
+        <div class="oc-detail-label" style="margin-bottom:8px;">Parameters</div>
+        <div class="oc-kv">
+          <span class="k">asset_id</span><span class="v">P-101 · "Pump P-101"</span>
+          <span class="k">task_code</span><span class="v">LUBE-01</span>
+          <span class="k">priority</span><span class="v">HIGH</span>
+        </div>
+      </div>
+
+      <div>
+        <div class="oc-detail-label" style="margin-bottom:8px;">Backing tool</div>
+        <div class="keyrow"><i class="ph ph-wrench" style="color:var(--write-ink);"></i><span class="kk">tool</span><span class="kv">cmms_create_work_order@1.2.0</span></div>
+        <div class="oc-sub" style="font-size:11.5px; margin-top:6px;">side_effect: true · idempotent: false · elevated scope required</div>
+      </div>
+
+      <div>
+        <div class="oc-detail-label" style="margin-bottom:8px;">Idempotency key <span style="text-transform:none; letter-spacing:0; color:var(--ink-faint);">— guards against duplicate work orders on retry</span></div>
+        <div class="keyrow"><i class="ph ph-key" style="color:var(--accent-violet);"></i><span class="kk">key</span><span class="kv">wo-7f3a9c21-01</span></div>
+      </div>
+
+      <div>
+        <div class="oc-detail-label" style="margin-bottom:8px;">Scope &amp; audit</div>
+        <div class="oc-kv">
+          <span class="k">attributed to</span><span class="v">n.forshteyn</span>
+          <span class="k">scope</span><span class="v">cmms:write (elevated)</span>
+          <span class="k">audit</span><span class="v">always logged · request_id req_7f3a9c21</span>
+        </div>
+      </div>
+
+      <label class="m-check"><input type="checkbox" id="apConfirm" onchange="document.getElementById('apApprove').disabled=!this.checked"> I understand this creates a work order in the CMMS.</label>
+    </div>
+    <div class="m-foot">
+      <button class="oc-btn ghost" onclick="closeApproval()">Cancel</button>
+      <span class="oc-spacer"></span>
+      <button class="oc-btn amber" id="apApprove" onclick="approveWrite()" disabled><i class="ph ph-shield-check"></i> Approve &amp; execute</button>
     </div>
   </div>
 </div>
@@ -300,44 +503,99 @@ runtime    snowflake_runtime_hours@2.1</div>
   }
 
   // ---- scenarios ----
+  const reqText = {
+    high: 'Which pumps at the North plant are overdue for lubrication?',
+    low:  'show me the north plant pumps',
+    write:'Raise a high-priority lubrication work order for Pump P-101'
+  };
+
   let scenario = 'high';
   function setScenario(s){
     scenario = s;
     document.getElementById('segHigh').classList.toggle('on', s==='high');
     document.getElementById('segLow').classList.toggle('on', s==='low');
-    document.getElementById('reqInput').value = s==='high'
-      ? 'Which pumps at the North plant are overdue for lubrication?'
-      : 'show me the north plant pumps';
+    document.getElementById('segWrite').classList.toggle('on', s==='write');
+    const inp=document.getElementById('reqInput'); inp.value=reqText[s]; inp.setAttribute('value', reqText[s]);
     resetFlow();
+  }
+
+  function showPlan(which){ // 'read' | 'write'
+    document.getElementById('steps').style.display = which==='read' ? 'flex':'none';
+    document.getElementById('writeSteps').style.display = which==='write' ? 'flex':'none';
+    document.getElementById('evTitle').textContent = which==='write' ? 'Write plan' : 'Execution plan';
+    document.getElementById('evIcon').className = which==='write' ? 'ph ph-shield-warning' : 'ph ph-path';
+  }
+
+  function setWStep(n, state){
+    const st = document.querySelector(`#writeSteps .oc-step[data-wstep="${n}"]`);
+    st.classList.remove('pending','is-run');
+    const mk = st.querySelector('.mk');
+    if(state==='pending'){ st.classList.add('pending'); mk.className='mk'; mk.innerHTML=n; }
+    else if(state==='done'){ mk.className='mk done'; mk.innerHTML='<i class="ph ph-check"></i>'; }
+    else if(state==='wdone'){ mk.className='mk wdone'; mk.innerHTML='<i class="ph ph-check"></i>'; }
+    else if(state==='run'){ st.classList.add('is-run'); mk.className='mk run'; mk.innerHTML='<i class="ph ph-circle-notch oc-spin"></i>'; }
+    else if(state==='gate'){ mk.className='mk gate'; mk.innerHTML='<i class="ph ph-shield-warning"></i>'; }
+  }
+
+  function resetWriteSteps(){
+    document.querySelectorAll('#writeSteps .oc-step').forEach(st=>st.classList.remove('is-open'));
+    setWStep(1,'done'); setWStep(2,'done'); setWStep(3,'gate'); setWStep(4,'pending'); setWStep(5,'pending');
+    document.getElementById('gateStatus').textContent='awaiting human approval — execution is blocked';
   }
 
   function resetFlow(){
     clearTimers();
-    document.getElementById('intentPanel').style.display='none';
-    document.getElementById('nudgePanel').style.display='none';
-    document.getElementById('resultSummary').style.display='none';
+    ['intentPanel','writePanel','writeSuccess','nudgePanel','resultSummary'].forEach(id=>document.getElementById(id).style.display='none');
     document.getElementById('matchBtn').style.display='inline-flex';
     steps.forEach(n=>setStepState(n,'pending'));
     closeAllDetails();
-    setEvStatus('5 steps · pending');
+    closeApproval();
+    if(scenario==='write'){ showPlan('write'); resetWriteSteps(); setEvStatus('gated · awaiting approval','write'); }
+    else { showPlan('read'); setEvStatus('5 steps · pending'); }
   }
 
   function doMatch(){
     document.getElementById('matchBtn').style.display='none';
     if(scenario==='high'){
-      const p = document.getElementById('intentPanel');
-      p.style.display='flex';
-      document.getElementById('nudgePanel').style.display='none';
+      document.getElementById('intentPanel').style.display='flex';
       document.getElementById('confFill').style.width='92%';
-      document.getElementById('confFill').classList.remove('low');
       document.getElementById('confNum').textContent='0.92';
       setEvStatus('5 steps · ready');
-    } else {
+    } else if(scenario==='low'){
       document.getElementById('nudgePanel').style.display='flex';
-      document.getElementById('intentPanel').style.display='none';
       setEvStatus('awaiting clarification','write');
+    } else { // write
+      document.getElementById('writePanel').style.display='flex';
+      setEvStatus('gated · awaiting approval','write');
     }
   }
+
+  // ---- write-action approval modal (the side-effect gate) ----
+  function openApproval(){
+    document.getElementById('apConfirm').checked=false;
+    document.getElementById('apApprove').disabled=true;
+    document.getElementById('approvalModal').classList.add('open');
+  }
+  function closeApproval(){ document.getElementById('approvalModal').classList.remove('open'); }
+  function openWDetail(n){ document.querySelector(`#writeSteps .oc-step[data-wstep="${n}"]`).classList.add('is-open'); }
+
+  function approveWrite(){
+    closeApproval();
+    document.getElementById('writePanel').style.display='none';
+    document.getElementById('gateStatus').innerHTML='approved by <span style="font-family:var(--font-mono);">n.forshteyn</span> · '+new Date().toLocaleTimeString();
+    const seq=[
+      ()=>{ setWStep(3,'wdone'); setEvStatus('approved · executing write','write'); },
+      ()=>{ setWStep(4,'run'); openWDetail(4); setEvStatus('writing · cmms_create_work_order','write'); },
+      ()=>{ setWStep(4,'wdone'); setWStep(5,'run'); closeAllDetails(); },
+      ()=>{ setWStep(5,'wdone'); setEvStatus('work order created · logged','write');
+            document.getElementById('writeSuccess').style.display='flex'; }
+    ];
+    let d=400; seq.forEach((fn,i)=>{ timers.push(setTimeout(fn,d)); d+=(i===1?900:650); });
+  }
+
+  // backdrop click + Esc close the modal
+  document.getElementById('approvalModal').addEventListener('click', e=>{ if(e.target.id==='approvalModal') closeApproval(); });
+  document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeApproval(); });
 
   function runPlan(){
     document.getElementById('resultSummary').style.display='none';
@@ -355,9 +613,9 @@ runtime    snowflake_runtime_hours@2.1</div>
     seq.forEach((fn,i)=>{ timers.push(setTimeout(fn, d)); d += (i===2?900:650); });
   }
 
-  function openResults(){ alert('→ Results + lineage screen (next in the set, once you approve this system).'); }
-  function openTrace(){ alert('→ Trace / audit screen (next in the set).'); }
-  function openClarify(){ alert('→ Clarification screen (next in the set).'); }
+  function openResults(){ window.location.href = 'Results - Lineage.html'; }
+  function openTrace(){ window.location.href = 'Trace - Audit.html'; }
+  function openClarify(){ window.location.href = 'Clarification.html'; }
 
   // land in matched-and-ready state so the key elements are visible immediately
   document.getElementById('intentPanel').style.display='flex';

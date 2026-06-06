@@ -211,6 +211,38 @@ Hand this to a design-capable Claude **together with `orchestration-agent-spec.m
 
 ---
 
+### 3.7 — Graph schema browser  *(optional surface; built)*
+
+> Design the **Graph schema browser** in high fidelity. A calm, **read-only** reference screen showing the governed, version-controlled shape of the knowledge graph that intents are written against. Master–detail: schema (node labels + relationships) on the left as the "work" surface; a detail/evidence pane on the right for the selected label.
+>
+> **Must-show elements:**
+> - A node-label list/map with the spec's labels: Site, Location, Asset, AssetClass, Component, FailureMode, MaintenanceTask, MaintenancePlan, WorkOrder, Technician, Sensor, Reading. A simple **boxes-and-arrows** relationship overview rendering the spec edges (`Site-[:CONTAINS]->Asset`, `Asset-[:HAS_COMPONENT]->Component`, `Component-[:SUBJECT_TO]->FailureMode`, `FailureMode-[:MITIGATED_BY]->MaintenanceTask`, `WorkOrder-[:TARGETS]->Asset`, `WorkOrder-[:EXECUTES]->MaintenanceTask`, `Sensor-[:MONITORS]->Component`, `Sensor-[:EMITS]->Reading`, etc.) — structure, not a live force graph.
+> - A detail pane for the selected label (default **Asset**): description, key properties with types, and incoming/outgoing relationships — relationship/edge & key properties shown in monospace (e.g. `WorkOrder.due_date`, `Reading.ts`, `Reading.value`).
+> - **Governance metadata:** `graph_version: 2026-06-04T09:00Z`, the uniqueness constraint `(label, business_id)`, and a "version-controlled / signed off" indicator.
+> - A cross-link tying schema to usage: on Asset / WorkOrder / MaintenanceTask, "used by intent `assets_overdue_for_task@3`" linking to the Intent catalogue.
+>
+> **Render these states:** (a) overview (all labels + relationship map), (b) a node label selected with its properties/relationships, (c) a relationship selected showing endpoints + edge properties. No write affordances — read-only.
+>
+> End with a 2–3 line rationale (domain graph schema §11, schema-as-reviewed-artefact / collaborative modelling §12, template-bound Cypher & determinism §7/§10).
+
+---
+
+### 3.8 — Write-action approval gate  *(product-critical; built as an in-flow modal)*
+
+> Design the **write-action approval gate** — the surface that makes principle #4 ("read vs write is unmistakable") real. It is **not a standalone screen**: it lives as a state + modal inside the relevant flows (Ask, and referenced from Trace), triggered whenever a side-effecting intent is matched. Reuse the locked design system; the whole surface is **amber** to read as distinct from calm read flows.
+>
+> **Must-show elements:**
+> - In **Ask**: a write scenario where the matched intent is `create_work_order` (amber **write · side-effect** pill, confidence shown), with editable params (`asset_id`, `task_code`, `priority`). The primary action is **"Review & approve write…"**, never an auto-run.
+> - In the **evidence/plan pane**: a write plan whose step 3 is an **Approval gate** (amber) reading "awaiting human approval — execution is blocked", with the side-effecting tool step (`cmms_create_work_order@1.2.0`) shown **blocked/pending** beneath it. Execution is visibly gated.
+> - The **approval modal** itself: capability + version, a "this changes external state" warning, the parameter set, the backing tool with `side_effect: true` / `idempotent: false`, the **idempotency-key** (with a "guards against duplicate writes on retry" note), **scope & audit** (elevated scope, attributed user, always logged, `request_id`), and an explicit **confirmation checkbox** that gates the **Approve & execute** button. Cancel + backdrop/Esc dismiss.
+> - On approval: the gate step resolves to "approved by <user>", the write step executes, and a **success summary** appears (`work_order_id`, approver, "logged") with a link to the full trace.
+>
+> **Render these states:** (a) write intent matched, gate awaiting; (b) approval modal open (confirm unchecked → Approve disabled; checked → enabled); (c) approved & executed, success summary. (The failed/halted write variant lives in Trace §3.3.)
+>
+> End with a 2–3 line rationale (read-vs-write & approval-gated side-effects §3/§4, idempotency-key & elevated scope §9/§13, audit/lineage on writes §10/§14).
+
+---
+
 ## 4. Running the session — tips
 
 - **Attach the spec.** Upload/paste `orchestration-agent-spec.md` so the designer can reference the domain schema and lineage model directly.
@@ -218,4 +250,4 @@ Hand this to a design-capable Claude **together with `orchestration-agent-spec.m
 - **Always ask for states.** The loading/clarification/error states are where this product's UX lives.
 - **Iterate the hero first.** Get 2–3 layout variations of the Console, pick a direction, then tell the designer to apply that visual system across the other screens for consistency.
 - **Keep it honest.** The "rationale per screen" requirement keeps the design anchored to determinism + lineage rather than drifting into generic dashboard chrome.
-- **All seven screens now have prompts:** the three hero screens (§3.1–3.3) plus Clarification (§3.4), Intent catalogue (§3.5), and Tool registry (§3.6). The optional **Graph schema browser** and **Write-action approval** modal aren't written out — reuse the same prompt pattern (goal → must-show elements → states → output format → rationale) if you want them, or ask me to draft them.
+- **All prompts are written out and all screens are built:** the three hero screens (§3.1–3.3), Clarification (§3.4), Intent catalogue (§3.5), Tool registry (§3.6), the optional Graph schema browser (§3.7), and the product-critical Write-action approval gate (§3.8). The write gate ships as an in-flow modal inside Console / Ask (per the "state/modal, not a standalone screen" decision), not as a separate artifact.
