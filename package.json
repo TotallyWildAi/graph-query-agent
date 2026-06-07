@@ -1,0 +1,13 @@
+{
+  "name": "orchestration-console-site",
+  "private": true,
+  "description": "Static deploy of the Orchestration Console design artifacts (Cloudflare Pages).",
+  "scripts": {
+    "build": "node scripts/build-site.mjs",
+    "preview": "npm run build && npx wrangler pages dev dist",
+    "deploy": "npm run build && npx wrangler pages deploy dist"
+  },
+  "devDependencies": {
+    "wrangler": "^3.90.0"
+  }
+}

@@ -1,0 +1,6 @@
+# Cloudflare Pages config for the Orchestration Console (static UI only).
+# The backend (FastAPI + Neo4j + Postgres) is NOT deployed here — see
+# docs/deploy-cloudflare.md for why and where it should run instead.
+name = "orchestration-console"
+pages_build_output_dir = "dist"
+compatibility_date = "2025-06-01"

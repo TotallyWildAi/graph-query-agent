@@ -17,3 +17,7 @@ node_modules/
 
 # Reference/iteration screenshots — not deliverables
 design-reference/**/*.png
+
+# Cloudflare Pages build output + wrangler state
+dist/
+.wrangler/
