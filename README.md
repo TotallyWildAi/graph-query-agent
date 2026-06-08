@@ -118,7 +118,7 @@ layout, with the dark rail, the node-type legend (Site, Asset, Component, Failur
 MaintenanceTask, WorkOrder, Sensor, Technician), the `read-only` / `no-dependency version` badges, and
 *Expand full graph*. This is the ForceAtlas2-rendered variant backed by `graph-explorer.bundle.js`.
 
-![Graph explorer full screen with force layout](docs/images/AC-expanded.png)
+![Graph explorer full screen with force layout](docs/images/AC-expanded.png?v=2)
 
 **Graph explorer — node provenance.** Selecting a node opens its evidence panel: typed
 **Properties** plus a **Provenance** block — `source` (neo4j), `node_id`, the `template` that
@@ -134,14 +134,14 @@ that was **approved and logged** (`WO-20485`), the bound parameters, and the fie
 reproduce it: `request_id`, `tool` + version, `graph_version`, and the `idempotency_key`. Note the
 amber **write** encoding and the *Replay this run* / *View full trace* affordances.
 
-![History run log — write action run record](docs/images/HIST-default.png)
+![History run log — write action run record](docs/images/HIST-default.png?v=2)
 
 **History — halted / error run.** The same screen with a rejected request selected:
 "overdue lubrication tasks at the harbour site" matched `assets_overdue_for_task`, but `harbour` did
 not resolve to a registered `Site` id. The agent **halted and asked to clarify rather than guessing**
 — no partial query ran. This is the "clarify, don't guess" principle made auditable.
 
-![History run log — halted error run record](docs/images/HIST-error.png)
+![History run log — halted error run record](docs/images/HIST-error.png?v=2)
 
 ### Design system
 
