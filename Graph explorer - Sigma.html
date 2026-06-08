@@ -78,6 +78,23 @@
   .gx-err{ position:absolute; inset:0; display:none; place-items:center; text-align:center; z-index:9; }
   .gx-err.show{ display:grid; }
   .gx-engine{ display:inline-flex; align-items:center; gap:7px; font-family:var(--font-mono); font-size:10px; color:var(--ink-faint); }
+
+  /* ===== mobile ===== */
+  @media (max-width:768px){
+    .gx-tools{ flex-wrap:wrap; gap:8px; padding:10px 14px; }
+    .gx-searchwrap{ max-width:none; min-width:0; flex:1 1 100%; order:-1; }
+    .gx-switch{ flex:0 1 auto; min-width:0; }
+    .gx-detail{ width:calc(100vw - 24px); max-width:288px; top:12px; left:12px; }
+    .gx-legend{ top:12px; right:12px; }
+    /* lift bottom-anchored chrome above the fixed bottom tab bar (~58px) */
+    .gx-zoom{ bottom:calc(18px + 64px); right:12px; }
+    .gx-status{ bottom:calc(18px + 64px); left:12px; }
+  }
+  @media (max-width:480px){
+    /* hide only the toggle's text label; keep the control itself */
+    .gx-switch{ font-size:0; gap:0; }
+    .gx-switch .sw{ font-size:12px; }
+  }
 </style>
 </head>
 <body>
@@ -145,5 +162,6 @@
 </div>
 
 <script src="assets/graph-explorer.bundle.js"></script>
+<script src="assets/mobile-nav.js" defer></script>
 </body>
 </html>

@@ -56,6 +56,15 @@
   /* write step markers in evidence plan */
   .oc-step .mk.gate{ border-color:var(--write); color:var(--write-ink); box-shadow:0 0 0 4px var(--write-soft); }
   .oc-step .mk.wdone{ background:var(--write); color:#fff; border-color:var(--write); }
+
+  /* mobile: keep the write-approval modal usable on small screens */
+  @media (max-width:600px){
+    .oc-modal-backdrop{ padding:16px; }
+    .oc-modal{ max-height:90vh; overflow-y:auto; }
+    .m-head{ padding:14px 16px; }
+    .m-body{ padding:16px; gap:14px; }
+    .m-foot{ padding:13px 16px; flex-wrap:wrap; }
+  }
 </style>
 </head>
 <body>
@@ -633,5 +642,6 @@ written_to     cmms · audit log</div>
   document.getElementById('matchBtn').style.display='none';
   setEvStatus('5 steps · ready');
 </script>
+<script src="assets/mobile-nav.js" defer></script>
 </body>
 </html>

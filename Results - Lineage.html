@@ -38,7 +38,13 @@
   /* results table is 6 columns — widen the work pane so runtime hrs isn't clipped */
   .oc-split{ grid-template-columns: minmax(600px, 1.4fr) .9fr; }
   /* results table */
-  .res-table-wrap{ border:1px solid var(--ink-line); border-radius: var(--r-md); overflow-x:auto; box-shadow: var(--shadow-rest); background: var(--card); }
+  .res-table-wrap{ border:1px solid var(--ink-line); border-radius: var(--r-md); max-width:100%; overflow-x:auto; box-shadow: var(--shadow-rest); background: var(--card); }
+
+  /* mobile: stack master-detail, let the wide table scroll inside its card */
+  @media (max-width:768px){
+    .oc-split{ grid-template-columns:1fr; }
+    .res-table-wrap{ max-width:100%; overflow-x:auto; }
+  }
   table.res{ width:100%; border-collapse:collapse; font-size:13px; }
   table.res thead th{ font-family: var(--font-mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase; color: var(--ink-faint); text-align:left; padding:10px 12px; border-bottom:1px solid var(--ink-line); background: var(--paper-warm); white-space:nowrap; }
   table.res thead th.tool-col{ color: var(--ink-soft); }
@@ -425,5 +431,6 @@
   const qp = new URLSearchParams(location.search);
   if(qp.get('trace')) showGraph(qp.get('trace'));
 </script>
+<script src="assets/mobile-nav.js" defer></script>
 </body>
 </html>

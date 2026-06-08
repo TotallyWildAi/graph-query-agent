@@ -28,6 +28,11 @@
   /* give the map a touch more room; right detail stays substantial */
   .schema-split{ grid-template-columns: minmax(440px, 1.06fr) 1fr; }
 
+  /* mobile: stack master-detail to one column */
+  @media (max-width:768px){
+    .schema-split{ grid-template-columns:1fr; }
+  }
+
   /* governance banner */
   .gov{ display:flex; align-items:center; gap:14px; padding:13px 16px; flex-wrap:wrap; }
   .gov .sig{ display:inline-flex; align-items:center; gap:7px; font-family: var(--font-mono); font-size:11px; color: var(--read-ink); border:1.5px solid var(--read); background: var(--read-soft); border-radius:999px; padding:4px 11px; }
@@ -550,5 +555,6 @@
   window.addEventListener('load', ()=>{ drawEdges(); selectNode('Asset'); });
   selectNode('Asset');
 </script>
+<script src="assets/mobile-nav.js" defer></script>
 </body>
 </html>
