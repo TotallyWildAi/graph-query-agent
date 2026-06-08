@@ -1,0 +1,38 @@
+name: Deploy to Cloudflare Pages
+
+# Deploys the static UI to Cloudflare Pages whenever main changes — which
+# happens when a PR is merged (and on any direct push to main). Manual runs
+# are also available via the Actions tab (workflow_dispatch).
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Never let two deploys race; cancel an in-flight one if a newer push lands.
+concurrency:
+  group: cloudflare-pages-deploy
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # build-site.mjs uses only Node built-ins, so no npm install is needed.
+      - name: Build static site (dist/)
+        run: node scripts/build-site.mjs
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist --project-name=orchestration-console --branch=main
