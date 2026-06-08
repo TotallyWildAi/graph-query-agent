@@ -1,7 +1,7 @@
 {
   "name": "orchestration-console-site",
   "private": true,
-  "description": "Static deploy of the Orchestration Console design artifacts (Cloudflare Pages).",
+  "description": "Static deploy of the Graph Query Agent design artifacts (Cloudflare Pages).",
   "scripts": {
     "build": "node scripts/build-site.mjs",
     "preview": "npm run build && npx wrangler pages dev dist",

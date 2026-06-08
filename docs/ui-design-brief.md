@@ -1,4 +1,4 @@
-# Orchestration Console — UI Design Brief & Per-Screen Prompts
+# Graph Query Agent — UI Design Brief & Per-Screen Prompts
 
 Hand this to a design-capable Claude **together with `orchestration-agent-spec.md`**.
 
@@ -11,7 +11,7 @@ Hand this to a design-capable Claude **together with `orchestration-agent-spec.m
 
 ## 1. Master brief
 
-> **Project:** UI design for an "Orchestration Console" — an internal enterprise web tool. The full technical spec is attached (`orchestration-agent-spec.md`); read it first.
+> **Project:** UI design for an "Graph Query Agent" — an internal enterprise web tool. The full technical spec is attached (`orchestration-agent-spec.md`); read it first.
 >
 > **What the product does:** A user types a request in natural language → the system matches it to a *registered intent* → runs parameterized Cypher against a Neo4j maintenance/engineering knowledge graph and/or calls *registered tools* (Snowflake/SAP/CMMS) → returns results where **every value is traceable to its source**.
 >

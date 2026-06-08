@@ -1,6 +1,6 @@
-# Graph Query Agent — Orchestration Console
+# Graph Query Agent
 
-The **Orchestration Console** is the front-end for a controlled orchestration agent that turns
+The **Graph Query Agent** is the front-end for a controlled orchestration agent that turns
 plain-English requests into **reviewed, parameterized Cypher queries** over a Neo4j knowledge graph
 (plus registered external tools), where **every returned value is traceable** to the query, node IDs
 and tool call that produced it.

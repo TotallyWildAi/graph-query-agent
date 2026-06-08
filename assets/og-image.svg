@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0E1014"/>
+      <stop offset="1" stop-color="#070809"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+
+  <!-- faint oversized graph motif, right side -->
+  <g transform="translate(715 120) scale(1.7)" fill="#1499FF" opacity="0.10">
+    <path d="M200,152a31.84,31.84,0,0,0-19.53,6.68l-23.11-18A31.65,31.65,0,0,0,160,128c0-.74,0-1.48-.08-2.21l13.23-4.41A32,32,0,1,0,168,104c0,.74,0,1.48.08,2.21l-13.23,4.41A32,32,0,0,0,128,96a32.59,32.59,0,0,0-5.27.44L115.89,81A32,32,0,1,0,96,88a32.59,32.59,0,0,0,5.27-.44l6.84,15.4a31.92,31.92,0,0,0-8.57,39.64L73.83,165.44a32.06,32.06,0,1,0,10.63,12l25.71-22.84a31.91,31.91,0,0,0,37.36-1.24l23.11,18A31.65,31.65,0,0,0,168,184a32,32,0,1,0,32-32Zm0-64a16,16,0,1,1-16,16A16,16,0,0,1,200,88ZM80,56A16,16,0,1,1,96,72,16,16,0,0,1,80,56ZM56,208a16,16,0,1,1,16-16A16,16,0,0,1,56,208Zm56-80a16,16,0,1,1,16,16A16,16,0,0,1,112,128Zm88,72a16,16,0,1,1,16-16A16,16,0,0,1,200,200Z"/>
+  </g>
+
+  <!-- brand lockup: icon + wordmark -->
+  <rect x="80" y="78" width="84" height="84" rx="20" fill="#1499FF"/>
+  <g transform="translate(94 92) scale(0.2188)" fill="#ffffff">
+    <path d="M200,152a31.84,31.84,0,0,0-19.53,6.68l-23.11-18A31.65,31.65,0,0,0,160,128c0-.74,0-1.48-.08-2.21l13.23-4.41A32,32,0,1,0,168,104c0,.74,0,1.48.08,2.21l-13.23,4.41A32,32,0,0,0,128,96a32.59,32.59,0,0,0-5.27.44L115.89,81A32,32,0,1,0,96,88a32.59,32.59,0,0,0,5.27-.44l6.84,15.4a31.92,31.92,0,0,0-8.57,39.64L73.83,165.44a32.06,32.06,0,1,0,10.63,12l25.71-22.84a31.91,31.91,0,0,0,37.36-1.24l23.11,18A31.65,31.65,0,0,0,168,184a32,32,0,1,0,32-32Zm0-64a16,16,0,1,1-16,16A16,16,0,0,1,200,88ZM80,56A16,16,0,1,1,96,72,16,16,0,0,1,80,56ZM56,208a16,16,0,1,1,16-16A16,16,0,0,1,56,208Zm56-80a16,16,0,1,1,16,16A16,16,0,0,1,112,128Zm88,72a16,16,0,1,1,16-16A16,16,0,0,1,200,200Z"/>
+  </g>
+  <text x="180" y="133" font-family="Segoe UI, Arial, sans-serif" font-size="30" font-weight="700" fill="#ffffff" letter-spacing="3">GRAPH QUERY AGENT</text>
+
+  <!-- hero value proposition -->
+  <text x="80" y="300" font-family="Segoe UI, Arial, sans-serif" font-size="66" font-weight="800" fill="#ffffff">Ask in plain English.</text>
+  <text x="80" y="378" font-family="Segoe UI, Arial, sans-serif" font-size="66" font-weight="800" fill="#ffffff">Run reviewed Cypher.</text>
+  <text x="80" y="456" font-family="Segoe UI, Arial, sans-serif" font-size="66" font-weight="800" fill="#1499FF">Trace every value.</text>
+
+  <!-- sub + domain -->
+  <text x="82" y="524" font-family="Segoe UI, Arial, sans-serif" font-size="27" fill="#9aa1ad">A controlled, auditable agent over a Neo4j knowledge graph.</text>
+  <text x="82" y="580" font-family="Consolas, 'Courier New', monospace" font-size="24" fill="#7cc4ff">graphagent.eqr.vc</text>
+</svg>

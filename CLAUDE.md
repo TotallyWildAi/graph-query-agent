@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this repo is
 
-UI **design artifacts** (not a running application) for the **Orchestration Console** — the
+UI **design artifacts** (not a running application) for the **Graph Query Agent** — the
 front-end for a controlled agent that turns plain-English requests into reviewed, parameterized
 Cypher queries over a Neo4j knowledge graph plus registered tools, where every returned value is
 traceable to the query, node IDs, and tool call that produced it.
