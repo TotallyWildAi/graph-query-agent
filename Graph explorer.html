@@ -97,6 +97,23 @@
   .gx-legend{ position:absolute; right:18px; top:18px; background:#fff; border:1px solid var(--ink-line); border-radius:12px; box-shadow:var(--shadow-rest); padding:11px 13px; display:flex; flex-direction:column; gap:7px; }
   .gx-legend .lk{ display:flex; align-items:center; gap:8px; font-size:11px; color:var(--ink-soft); }
   .gx-legend .sw{ width:11px; height:11px; border-radius:50%; }
+
+  /* ===== mobile ===== */
+  @media (max-width:768px){
+    .gx-tools{ flex-wrap:wrap; gap:8px; padding:10px 14px; }
+    .gx-searchwrap{ max-width:none; min-width:0; flex:1 1 100%; order:-1; }
+    .gx-switch{ flex:0 1 auto; min-width:0; }
+    .gx-detail{ width:calc(100vw - 24px); max-width:288px; top:12px; left:12px; }
+    .gx-legend{ top:12px; right:12px; }
+    /* lift bottom-anchored chrome above the fixed bottom tab bar (~58px) */
+    .gx-zoom{ bottom:calc(18px + 64px); right:12px; }
+    .gx-status{ bottom:calc(18px + 64px); left:12px; }
+  }
+  @media (max-width:480px){
+    /* hide only the toggle's text label; keep the control itself */
+    .gx-switch{ font-size:0; gap:0; }
+    .gx-switch .sw{ font-size:12px; }
+  }
 </style>
 </head>
 <body>
@@ -406,5 +423,6 @@ function seed(){ vis=new Set(['SITE-NORTH']); sel=null; view={k:1,tx:0,ty:0}; ap
 window.addEventListener('resize', ()=>{ /* keep layout */ });
 seed();
 </script>
+<script src="assets/mobile-nav.js" defer></script>
 </body>
 </html>

@@ -35,6 +35,11 @@
   .filt button.on{ background: var(--ink); color:#fff; }
   /* (legacy divider rule retired with pill toggle) */
 
+  /* mobile: don't let the search field force the filter row to overflow */
+  @media (max-width:480px){
+    .search{ min-width:0; }
+  }
+
   /* tool list rows */
   .tool-row{ width:100%; text-align:left; border:1.5px solid var(--ink-line); border-radius: var(--r-md); background: var(--card); padding:14px 16px; cursor:pointer; display:flex; flex-direction:column; gap:8px; transition: background var(--dur-fast) var(--ease); }
   .tool-row:hover{ background: rgba(27,30,44,.03); }
@@ -357,5 +362,6 @@
 
   select('snow');
 </script>
+<script src="assets/mobile-nav.js" defer></script>
 </body>
 </html>

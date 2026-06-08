@@ -34,6 +34,11 @@
   .filt button{ font-family: var(--font-mono); font-size:11px; letter-spacing:.04em; text-transform:uppercase; padding:8px 13px; border:none; border-radius:999px; background:none; color: var(--ink-soft); cursor:pointer; }
   .filt button.on{ background: var(--ink); color:#fff; }
 
+  /* mobile: don't let the search field force the filter row to overflow */
+  @media (max-width:480px){
+    .search{ min-width:0; }
+  }
+
   /* intent list rows */
   .intent-row{ width:100%; text-align:left; border:1.5px solid var(--ink-line); border-radius: var(--r-md); background: var(--card); padding:14px 16px; cursor:pointer; display:flex; flex-direction:column; gap:7px; transition: background var(--dur-fast) var(--ease); }
   .intent-row:hover{ background: rgba(27,30,44,.03); }
@@ -326,5 +331,6 @@
   // init
   select('overdue');
 </script>
+<script src="assets/mobile-nav.js" defer></script>
 </body>
 </html>

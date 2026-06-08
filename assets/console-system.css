@@ -177,7 +177,7 @@ hr{ border:0; border-top:1px solid var(--ink-line); margin:var(--space-7) 0; }
 .oc-ev-body{ padding:22px 24px 40px; overflow:auto; flex:1; }
 
 @media (max-width:1080px){ .oc-split{ grid-template-columns:1fr; } .oc-evidence{ border-left:none; border-top:1px solid var(--hair); } }
-@media (max-width:720px){ .oc-app{ grid-template-columns:1fr; } .oc-rail{ display:none; } }
+@media (max-width:768px){ .oc-app{ grid-template-columns:1fr; } .oc-rail{ display:none; } }
 
 /* ---------- 3 · PRIMITIVES ---------- */
 .oc-eyebrow{ font-family:var(--font-mono); font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-faint); display:block; }
@@ -290,3 +290,158 @@ hr{ border:0; border-top:1px solid var(--ink-line); margin:var(--space-7) 0; }
 .oc-empty{ height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:12px; color:var(--ink-faint); padding:40px; }
 .oc-empty .glyph{ width:54px; height:54px; border:1.5px dashed var(--hair); border-radius:var(--r-md); display:grid; place-items:center; font-size:26px; color:var(--ink-faint); }
 .oc-empty .ttl{ font-size:14px; color:var(--ink-soft); font-weight:600; }
+
+
+/* =====================================================================
+   MOBILE / RESPONSIVE NAV + FIXES
+   ---------------------------------------------------------------------
+   Mobile chrome injected by assets/mobile-nav.js: a fixed dark top bar
+   (.oc-mtop) with hamburger, a slide-in drawer (.oc-mdrawer) with the
+   full grouped nav, a backdrop (.oc-mscrim), and a fixed bottom tab bar
+   (.oc-mbottom). All four are display:none on desktop and only revealed
+   inside @media(max-width:768px) — the same breakpoint that hides the
+   left rail (.oc-rail). Matches the dark-rail aesthetic: bg #0A0B0D,
+   cyan active state via var(--accent-cyan).
+   ===================================================================== */
+
+/* Hidden by default (desktop): mobile chrome never shows above 768px. */
+.oc-mtop,
+.oc-mdrawer,
+.oc-mscrim,
+.oc-mbottom{ display:none; }
+
+@media (max-width:768px){
+
+  /* ---- top app bar ---- */
+  .oc-mtop{
+    position:fixed; top:0; left:0; right:0; height:54px; z-index:300;
+    background:#0A0B0D; display:flex; align-items:center; gap:10px;
+    padding:0 14px; border-bottom:1px solid rgba(255,255,255,.08);
+  }
+  .oc-mtop-burger{
+    width:40px; height:40px; flex:none; display:grid; place-items:center;
+    border:0; background:transparent; color:#fff; border-radius:8px;
+    cursor:pointer; transition:background var(--dur-fast) var(--ease);
+  }
+  .oc-mtop-burger i{ font-size:22px; }
+  .oc-mtop-burger:hover,
+  .oc-mtop-burger:active{ background:rgba(255,255,255,.08); }
+  .oc-mtop-brand{
+    display:flex; align-items:center; gap:9px; color:#fff;
+    font-family:var(--font-display); font-weight:700; font-size:15px;
+    text-decoration:none;
+  }
+  /* scale the 40px brandmark down so it fits inside the 54px bar */
+  .oc-mtop-brand .oc-brandmark{ width:30px; height:30px; font-size:18px; border-radius:8px; }
+
+  /* ---- slide-in drawer ---- */
+  .oc-mdrawer{
+    position:fixed; top:0; left:0; height:100%; width:min(82vw,320px);
+    background:#0A0B0D; z-index:320; transform:translateX(-100%);
+    transition:transform .25s var(--ease);
+    display:flex; flex-direction:column; padding:14px 12px;
+    overflow-y:auto; gap:4px;
+  }
+  .oc-mdrawer.open{ transform:translateX(0); }
+  .oc-mdrawer-head{
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:10px;
+  }
+  .oc-mdrawer-head .oc-mtop-brand .oc-brandmark{ width:30px; height:30px; font-size:18px; border-radius:8px; }
+  .oc-mdrawer-close{
+    width:36px; height:36px; flex:none; display:grid; place-items:center;
+    border:0; background:transparent; color:#fff; border-radius:8px;
+    cursor:pointer; transition:background var(--dur-fast) var(--ease);
+  }
+  .oc-mdrawer-close i{ font-size:20px; }
+  .oc-mdrawer-close:hover,
+  .oc-mdrawer-close:active{ background:rgba(255,255,255,.08); }
+
+  /* drawer group header — mirrors .oc-navgrp */
+  .oc-navgrp-m{
+    font-family:var(--font-mono); font-size:9.5px; letter-spacing:.16em;
+    text-transform:uppercase; color:#6b7280; margin:18px 8px 7px;
+  }
+  /* drawer nav item — mirrors .oc-nav */
+  .oc-mnav{
+    display:flex; align-items:center; gap:11px; padding:10px 12px;
+    border-radius:10px; color:#c5cad3; text-decoration:none; font-size:14px;
+    transition:background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+  }
+  .oc-mnav i{ font-size:18px; }
+  .oc-mnav:hover{ background:rgba(255,255,255,.06); color:#fff; }
+  .oc-mnav.on{ background:var(--accent-cyan); color:#fff; }
+
+  /* ---- backdrop scrim ---- */
+  .oc-mscrim{
+    position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:310;
+    opacity:0; visibility:hidden; transition:opacity .25s ease;
+  }
+  .oc-mscrim.open{ opacity:1; visibility:visible; }
+
+  /* ---- bottom tab bar ---- */
+  .oc-mbottom{
+    position:fixed; left:0; right:0; bottom:0; z-index:300; height:58px;
+    background:#0A0B0D; border-top:1px solid rgba(255,255,255,.08);
+    display:flex; padding-bottom:env(safe-area-inset-bottom);
+  }
+  .oc-mtab{
+    flex:1; display:flex; flex-direction:column; align-items:center;
+    justify-content:center; gap:3px; background:none; border:0; color:#8b93a1;
+    font-family:var(--font-body); font-size:10px; text-decoration:none;
+    cursor:pointer;
+  }
+  .oc-mtab i{ font-size:20px; }
+  .oc-mtab.on{ color:var(--accent-cyan); }
+
+  /* lock background scroll while the drawer is open */
+  body.oc-mdrawer-lock{ overflow:hidden; }
+
+  /* ---- offset content so the fixed bars never cover anything ---- */
+  .oc-app{
+    padding-top:54px;
+    padding-bottom:calc(58px + env(safe-area-inset-bottom));
+  }
+  /* white contextual bar sticks just under the fixed app bar */
+  .oc-top{ top:54px; }
+
+  /* ---- global cutoff fixes: stack & scroll, never hide content ---- */
+  .oc-split{ grid-template-columns:1fr; min-width:0; }
+  .oc-split > *{ min-width:0; }
+  /* evidence pane stacks under the work column and stays visible */
+  .oc-evidence{ border-left:none; border-top:1px solid var(--hair); }
+
+  /* trim the top bar; it already wraps */
+  .oc-top{ padding:10px 16px; }
+
+  /* long Cypher scrolls inside its own block, not the page */
+  .oc-code{ max-width:100%; overflow-x:auto; }
+}
+
+/* slightly smaller monospace for narrow phones — keep formatting intact */
+@media (max-width:640px){
+  .oc-code{ font-size:11px; }
+}
+
+/* very narrow phones: shrink top-bar controls so they fit one row */
+@media (max-width:480px){
+  .oc-top .crumb{ font-size:12px; }
+  .oc-top .oc-meta{ font-size:10px; }
+  .oc-top .oc-btn{ padding:8px 13px; font-size:12px; }
+  .oc-top .oc-spacer{ display:none; }
+  .oc-top .oc-seg{ overflow-x:auto; }
+  .oc-top .oc-seg button{ padding:5px 10px; font-size:10px; }
+  /* request box: tighten padding so input + button still fit */
+  .oc-reqbox{ padding:7px 8px 7px 16px; }
+  .oc-reqbox .q{ min-width:0; }
+}
+
+/* never allow a page-wide horizontal scrollbar; fixed bars/drawer/scrim
+   are attached to <body> so they are not clipped by this */
+html,body{ max-width:100%; overflow-x:hidden; }
+
+/* honor reduced-motion: no drawer slide animation */
+@media (prefers-reduced-motion:reduce){
+  .oc-mdrawer{ transition:none; }
+  .oc-mscrim{ transition:none; }
+}
