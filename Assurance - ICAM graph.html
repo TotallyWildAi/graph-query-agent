@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Incident Assurance — ICAM contributing-factor graph</title>
+<link rel="stylesheet" href="assets/console-system.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<meta name="description" content="The ICAM contributing-factor graph — incident, the four contributing-factor layers, corrective actions and evidence. Missing layers show as holes in the Swiss-cheese model.">
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Incident Investigation Assurance">
+<meta property="og:title" content="Incident Assurance — ICAM graph">
+<meta property="og:description" content="The ICAM contributing-factor graph — incident, the four contributing-factor layers, corrective actions and evidence.">
+<style>
+  html,body{ height:100%; }
+  body{ margin:0; }
+  .oc-seg{ display:inline-flex; background:var(--card-sunk); border:none; border-radius:999px; padding:3px; flex:none; }
+  .oc-seg button{ font-family:var(--font-mono); font-size:11px; letter-spacing:.04em; text-transform:uppercase; padding:6px 14px; border:none; border-radius:999px; background:none; color:var(--ink-soft); cursor:pointer; transition:all var(--dur-fast) var(--ease); }
+  .oc-seg button.on{ background:var(--ink); color:#fff; }
+
+  .oc-split{ grid-template-columns:1.5fr .85fr; }
+  @media (max-width:1080px){ .oc-split{ grid-template-columns:1fr; } }
+
+  .graph-wrap{ position:relative; background:var(--card); border:1px solid var(--ink-line); border-radius:var(--r-lg); box-shadow:var(--shadow-rest); overflow:hidden; }
+  .graph-wrap svg{ display:block; width:100%; height:auto; }
+
+  /* nodes */
+  .gnode{ cursor:pointer; }
+  .gnode .nbox{ transition:filter var(--dur-fast) var(--ease); }
+  .gnode:hover .nbox{ filter:drop-shadow(0 4px 10px rgba(12,18,28,.16)); }
+  .gnode.sel .nbox{ stroke-width:2.5; }
+  .nlabel{ font-family:var(--font-body); font-weight:600; fill:var(--ink); }
+  .nsub{ font-family:var(--font-mono); fill:var(--ink-faint); }
+  .nflag{ font-family:var(--font-mono); font-weight:500; }
+
+  .legend{ display:flex; gap:16px; flex-wrap:wrap; align-items:center; padding:12px 16px; border-top:1px solid var(--hair); font-size:11.5px; color:var(--ink-soft); }
+  .legend .li{ display:inline-flex; align-items:center; gap:7px; }
+  .swatch{ width:13px; height:13px; border-radius:4px; border:1.5px solid; flex:none; }
+
+  /* evidence pane */
+  .ev-detail .vp{ display:inline-flex; align-items:center; gap:6px; font-family:var(--font-mono); font-size:10px; letter-spacing:.06em; text-transform:uppercase; border-radius:999px; padding:3px 10px; border:1px solid; }
+  .vp.pass{ color:var(--read-ink); border-color:#BFE6D2; background:var(--read-soft); }
+  .vp.fail{ color:var(--err); border-color:#F3BCBE; background:var(--err-soft); }
+  .vp.miss{ color:var(--ink-faint); border-color:var(--hair); background:var(--paper); }
+  .callout{ display:flex; gap:10px; align-items:flex-start; padding:12px 14px; border:1px solid #BFE1FB; background:var(--accent-cyan-soft); border-radius:var(--r-sm); margin-top:16px; }
+  .callout i{ color:#0C6FC2; font-size:17px; margin-top:1px; flex:none; }
+  .callout .t{ font-size:12px; color:var(--ink-soft); line-height:1.55; }
+</style>
+</head>
+<body>
+<div class="oc">
+  <div class="oc-app">
+
+    <!-- ===================== LEFT RAIL ===================== -->
+    <aside class="oc-rail">
+      <a class="oc-brand" href="assurance-index.html" title="Assurance home"><span class="oc-brandmark"><i class="ph ph-shield-check"></i></span><div class="wm">Incident Assurance<small>ICAM · assurance</small></div></a>
+      <div class="oc-navgrp">Assurance</div>
+      <a class="oc-nav" href="Assurance - Scorecard.html" style="text-decoration:none;"><i class="ph ph-clipboard-text"></i> Scorecard</a>
+      <div class="oc-nav on"><i class="ph ph-share-network"></i> ICAM graph</div>
+      <a class="oc-nav" href="Assurance - Programme.html" style="text-decoration:none;"><i class="ph ph-chart-bar"></i> Programme</a>
+      <a class="oc-nav" href="Assurance - Reviewer.html" style="text-decoration:none;"><i class="ph ph-user-check"></i> Reviewer queue</a>
+      <div class="oc-navgrp">Platform</div>
+      <a class="oc-nav" href="index.html" style="text-decoration:none;"><i class="ph ph-graph"></i> Graph Query Agent</a>
+      <div class="oc-rail-foot">Assist, don't decide. The harness flags &amp; explains; a qualified HSE reviewer signs off.</div>
+    </aside>
+
+    <!-- ===================== MAIN ===================== -->
+    <div class="oc-main">
+
+      <div class="oc-top">
+        <span class="crumb">Assurance / <b>ICAM graph</b></span>
+        <span class="oc-seg" role="group" aria-label="Scenario">
+          <button id="segDef" class="on" onclick="setScenario('deficient')">Deficient · INC-2026-0412</button>
+          <button id="segPass" onclick="setScenario('assured')">Assured · INC-2026-0388</button>
+        </span>
+        <span class="oc-spacer"></span>
+        <span class="oc-meta">model <b>ICAM · Swiss-cheese</b></span>
+        <span class="oc-meta">source <b>neo4j</b></span>
+      </div>
+
+      <div class="oc-split">
+
+        <!-- ---------- WORK PANE (left) : the graph ---------- -->
+        <div class="oc-work">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span class="oc-eyebrow" style="margin:0;">Contributing-factor graph</span>
+            <span class="oc-sub" style="font-size:11.5px;" id="graphHint">Each ICAM layer should contribute a barrier. <b>Dashed = not analysed</b> — a hole in the Swiss cheese. Click any node.</span>
+          </div>
+
+          <div class="graph-wrap">
+            <svg id="svg" viewBox="0 0 980 580" preserveAspectRatio="xMidYMid meet" role="img" aria-label="ICAM contributing-factor graph">
+              <defs>
+                <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                  <path d="M0,0 L10,5 L0,10 z" fill="#8D8D8D"></path>
+                </marker>
+                <marker id="arrowGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                  <path d="M0,0 L10,5 L0,10 z" fill="#19A05F"></path>
+                </marker>
+                <marker id="arrowAmber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                  <path d="M0,0 L10,5 L0,10 z" fill="#E8973A"></path>
+                </marker>
+              </defs>
+              <g id="edges"></g>
+              <g id="nodes"></g>
+            </svg>
+            <div class="legend">
+              <span class="li"><span class="swatch" style="background:var(--read-soft); border-color:#BFE6D2;"></span> layer analysed</span>
+              <span class="li"><span class="swatch" style="background:var(--paper); border-color:var(--ink-line); border-style:dashed;"></span> not analysed (hole)</span>
+              <span class="li"><span class="swatch" style="background:var(--err-soft); border-color:#F3BCBE;"></span> incident</span>
+              <span class="li"><span class="swatch" style="background:var(--write-soft); border-color:#F3D6A5;"></span> corrective action</span>
+              <span class="li"><span class="swatch" style="background:var(--card); border-color:var(--ink-line);"></span> evidence</span>
+            </div>
+          </div>
+
+          <div class="oc-sub" style="font-size:11.5px; display:flex; align-items:center; gap:7px;">
+            <i class="ph ph-lock-simple" style="color:var(--read-ink);"></i>
+            Read-only projection of the investigation onto the ICAM model. Coverage and linkage are computed, not asserted.
+          </div>
+        </div>
+
+        <!-- ---------- EVIDENCE PANE (right) ---------- -->
+        <div class="oc-evidence">
+          <div class="oc-ev-head">
+            <i class="ph ph-info" style="font-size:18px;" id="evIcon"></i>
+            <span class="oc-ev-title" id="evTitle">ICAM coverage</span>
+            <span class="oc-spacer"></span>
+            <span class="oc-pill dim" id="evTag"><span class="dot"></span>4 layers</span>
+          </div>
+          <div class="oc-ev-body ev-detail" id="evBody"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ---------- node geometry (fixed layout) ----------
+  // layers latent -> immediate, stacked left; incident centre-right; action below; evidence bottom-left
+  const LAYERS = [
+    {key:'organisational_factors',       label:'Organisational factors',      sub:'latent', x:175, y:80},
+    {key:'task_environmental_conditions',label:'Task / environmental',        sub:'conditions', x:175, y:210},
+    {key:'individual_team_actions',      label:'Individual / team actions',   sub:'immediate', x:175, y:340},
+    {key:'absent_failed_defences',       label:'Absent / failed defences',    sub:'barrier', x:175, y:470}
+  ];
+  const INCIDENT = {x:640, y:210};
+  const ACTION   = {x:640, y:430};
+  const EVIDENCE = {x:430, y:520};
+
+  const SCEN = {
+    deficient: {
+      incidentId:'INC-2026-0412', incidentLabel:'Conveyor CV-07 laceration',
+      covered:{ organisational_factors:false, task_environmental_conditions:false, individual_team_actions:true, absent_failed_defences:false },
+      action:{ label:'Retrain the fitter', sub:'1 corrective action', targets:['individual_team_actions'], tone:'amber' },
+      evidence:{ label:'Permit · WO · injury report', sub:'3 records · grounded ✓' },
+      hint:'Each ICAM layer should contribute a barrier. <b>Dashed = not analysed</b> — a hole in the Swiss cheese. Click any node.',
+      detail:{
+        organisational_factors:{verdict:'miss', rat:'Not analysed. No examination of why the isolation/permit system or scheduling permitted an energised belt during maintenance.'},
+        task_environmental_conditions:{verdict:'miss', rat:'Not analysed. Equipment state, time pressure, communication and supervision at the work front are not examined.'},
+        individual_team_actions:{verdict:'covered', rat:'Covered: the fitter did not apply a personal lock. This is the only layer substantively addressed.'},
+        absent_failed_defences:{verdict:'miss', rat:'Not analysed. Isolation verification — the barrier that should have prevented the belt moving — is not examined as a failed defence.'}
+      }
+    },
+    assured: {
+      incidentId:'INC-2026-0388', incidentLabel:'HT-22 tyre-handler near-miss',
+      covered:{ organisational_factors:true, task_environmental_conditions:true, individual_team_actions:true, absent_failed_defences:true },
+      action:{ label:'5 actions across layers', sub:'mapped to causes', targets:['organisational_factors','task_environmental_conditions','individual_team_actions','absent_failed_defences'], tone:'amber' },
+      evidence:{ label:'JHA · inspection · roster · statements', sub:'grounded ✓' },
+      hint:'All four ICAM layers carry distinct, evidenced findings — no holes — and corrective actions map across every layer. Click any node.',
+      detail:{
+        organisational_factors:{verdict:'covered', rat:'Covered: a maintenance-scheduling policy compressed tyre-change bays — a latent organisational factor, evidenced by the roster.'},
+        task_environmental_conditions:{verdict:'covered', rat:'Covered: worn attachment locking pins and time pressure on the change-out, evidenced by the inspection log.'},
+        individual_team_actions:{verdict:'covered', rat:'Covered: the spotter’s position relative to the load during the lift.'},
+        absent_failed_defences:{verdict:'covered', rat:'Covered: the missing exclusion-zone barrier that should have kept the spotter clear.'}
+      }
+    }
+  };
+
+  let scenario = 'deficient';
+  let selected = null;
+
+  function n(tag, attrs, children){
+    const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+    for(const k in attrs) el.setAttribute(k, attrs[k]);
+    if(children) el.innerHTML = children;
+    return el;
+  }
+
+  function layerCx(){ return LAYERS[0].x; } // box centre x set per-node below
+
+  // box dims
+  const LW=210, LH=84, IW=180, IH=92, AW=200, AH=72, EW=240, EH=64;
+
+  function draw(){
+    const d = SCEN[scenario];
+    const edges = document.getElementById('edges'); edges.innerHTML='';
+    const nodes = document.getElementById('nodes'); nodes.innerHTML='';
+
+    // ----- edges: each layer -> incident -----
+    LAYERS.forEach(L=>{
+      const on = d.covered[L.key];
+      const x1 = L.x + LW/2, y1 = L.y + LH/2;
+      const x2 = INCIDENT.x - IW/2, y2 = INCIDENT.y + IH/2;
+      edges.appendChild(n('path', {
+        d:`M${x1},${y1} C${(x1+x2)/2+40},${y1} ${(x1+x2)/2-40},${y2} ${x2},${y2}`,
+        fill:'none',
+        stroke: on ? '#19A05F' : '#C9CCD2',
+        'stroke-width': on ? 2.4 : 1.6,
+        'stroke-dasharray': on ? '0' : '6 5',
+        'marker-end': on ? 'url(#arrowGreen)' : 'url(#arrow)',
+        opacity: on ? 0.9 : 0.6
+      }));
+    });
+
+    // ----- edges: corrective action -> targeted layer(s) -----
+    d.action.targets.forEach(tk=>{
+      const L = LAYERS.find(x=>x.key===tk);
+      const x1 = ACTION.x, y1 = ACTION.y;
+      const x2 = L.x + LW/2, y2 = L.y + LH/2;
+      edges.appendChild(n('path', {
+        d:`M${x1},${y1} C${(x1+x2)/2},${y1+10} ${(x1+x2)/2},${y2+10} ${x2},${y2}`,
+        fill:'none', stroke:'#E8973A', 'stroke-width':2, 'stroke-dasharray':'2 4', 'marker-end':'url(#arrowAmber)', opacity:0.85
+      }));
+    });
+
+    // ----- edge: evidence -> incident (grounding) -----
+    edges.appendChild(n('path', {
+      d:`M${EVIDENCE.x+EW/2},${EVIDENCE.y} C${EVIDENCE.x+EW/2+80},${EVIDENCE.y} ${INCIDENT.x-40},${INCIDENT.y+IH} ${INCIDENT.x-20},${INCIDENT.y+IH-6}`,
+      fill:'none', stroke:'#8D8D8D', 'stroke-width':1.6, 'marker-end':'url(#arrow)', opacity:0.5
+    }));
+
+    // ----- layer nodes -----
+    LAYERS.forEach(L=>{
+      const on = d.covered[L.key];
+      const fill = on ? 'var(--accent-green-soft)' : 'var(--paper)';
+      const stroke = on ? '#BFE6D2' : '#C9CCD2';
+      const g = n('g', {class:'gnode'+(selected==='layer:'+L.key?' sel':''), tabindex:'0'});
+      g.appendChild(n('rect', {class:'nbox', x:L.x, y:L.y, width:LW, height:LH, rx:12, fill, stroke, 'stroke-width':1.5, 'stroke-dasharray': on?'0':'6 5'}));
+      g.appendChild(n('text', {class:'nlabel', x:L.x+16, y:L.y+30, 'font-size':14}, L.label));
+      g.appendChild(n('text', {class:'nsub', x:L.x+16, y:L.y+48, 'font-size':10.5}, 'ICAM layer · '+L.sub));
+      if(on){
+        g.appendChild(n('text', {class:'nflag', x:L.x+16, y:L.y+68, 'font-size':10.5, fill:'#107A47'}, '✓ analysed'));
+      } else {
+        g.appendChild(n('text', {class:'nflag', x:L.x+16, y:L.y+68, 'font-size':10.5, fill:'#E5484D'}, '⚠ not analysed'));
+      }
+      g.addEventListener('click', ()=>selectLayer(L.key));
+      g.addEventListener('keypress', e=>{ if(e.key==='Enter') selectLayer(L.key); });
+      nodes.appendChild(g);
+    });
+
+    // ----- incident node -----
+    const gi = n('g', {class:'gnode'+(selected==='incident'?' sel':''), tabindex:'0'});
+    gi.appendChild(n('rect', {class:'nbox', x:INCIDENT.x-IW/2, y:INCIDENT.y, width:IW, height:IH, rx:14, fill:'var(--marker-soft)', stroke:'#F3BCBE', 'stroke-width':1.5}));
+    gi.appendChild(n('text', {class:'nsub', x:INCIDENT.x-IW/2+16, y:INCIDENT.y+26, 'font-size':10.5, fill:'#E5484D'}, 'INCIDENT'));
+    gi.appendChild(n('text', {class:'nlabel', x:INCIDENT.x-IW/2+16, y:INCIDENT.y+48, 'font-size':13}, d.incidentId));
+    gi.appendChild(n('text', {class:'nsub', x:INCIDENT.x-IW/2+16, y:INCIDENT.y+68, 'font-size':10.5}, d.incidentLabel));
+    gi.addEventListener('click', ()=>selectIncident());
+    nodes.appendChild(gi);
+
+    // ----- corrective action node -----
+    const ga = n('g', {class:'gnode'+(selected==='action'?' sel':''), tabindex:'0'});
+    ga.appendChild(n('rect', {class:'nbox', x:ACTION.x-AW/2, y:ACTION.y-AH/2, width:AW, height:AH, rx:12, fill:'var(--accent-yellow-soft)', stroke:'#F3D6A5', 'stroke-width':1.5}));
+    ga.appendChild(n('text', {class:'nsub', x:ACTION.x-AW/2+16, y:ACTION.y-AH/2+24, 'font-size':10.5, fill:'#B56A10'}, 'CORRECTIVE ACTION'));
+    ga.appendChild(n('text', {class:'nlabel', x:ACTION.x-AW/2+16, y:ACTION.y-AH/2+46, 'font-size':13}, d.action.label));
+    ga.addEventListener('click', ()=>selectAction());
+    nodes.appendChild(ga);
+
+    // ----- evidence node -----
+    const ge = n('g', {class:'gnode'+(selected==='evidence'?' sel':''), tabindex:'0'});
+    ge.appendChild(n('rect', {class:'nbox', x:EVIDENCE.x-EW/2, y:EVIDENCE.y-EH/2, width:EW, height:EH, rx:10, fill:'var(--card)', stroke:'var(--ink-line)', 'stroke-width':1.5}));
+    ge.appendChild(n('text', {class:'nsub', x:EVIDENCE.x-EW/2+14, y:EVIDENCE.y-EH/2+22, 'font-size':10.5}, 'EVIDENCE · grounding'));
+    ge.appendChild(n('text', {class:'nlabel', x:EVIDENCE.x-EW/2+14, y:EVIDENCE.y-EH/2+42, 'font-size':12}, d.evidence.label));
+    ge.addEventListener('click', ()=>selectEvidence());
+    nodes.appendChild(ge);
+  }
+
+  // ---------- evidence-pane detail ----------
+  function setEv(icon, title, tag, tagCls, html){
+    document.getElementById('evIcon').className = 'ph '+icon;
+    document.getElementById('evIcon').style.fontSize='18px';
+    document.getElementById('evTitle').textContent = title;
+    const t = document.getElementById('evTag'); t.className='oc-pill '+(tagCls||'dim'); t.innerHTML='<span class="dot"></span>'+tag;
+    document.getElementById('evBody').innerHTML = html;
+  }
+
+  function selectLayer(key){
+    selected='layer:'+key; draw();
+    const d = SCEN[scenario]; const L = LAYERS.find(x=>x.key===key); const det = d.detail[key];
+    const on = d.covered[key];
+    setEv(on?'ph-check-circle':'ph-warning', L.label, on?'analysed':'hole', on?'read':'err', `
+      <div class="oc-detail-label" style="margin-bottom:6px;">ICAM contributing-factor layer</div>
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px;">
+        <span class="vp ${on?'pass':'miss'}"><i class="ph ${on?'ph-check':'ph-minus'}"></i>${on?'analysed':'not analysed'}</span>
+        <span class="oc-sub" style="font-size:11px; font-family:var(--font-mono);">${key}</span>
+      </div>
+      <div class="oc-sub" style="font-size:12.5px; line-height:1.6;">${det.rat}</div>
+      ${!on?`<div class="callout"><i class="ph ph-warning-octagon" style="color:#E5484D;"></i><div class="t">This layer is a <b>hole in the Swiss cheese</b>. The Completeness and Causal-validity dimensions fail partly because of it.</div></div>`:''}
+    `);
+  }
+  function selectIncident(){
+    selected='incident'; draw();
+    const d = SCEN[scenario];
+    const holes = LAYERS.filter(L=>!d.covered[L.key]).length;
+    setEv('ph-warning-octagon', d.incidentId, holes? holes+' of 4 layers missing':'all layers covered', holes?'err':'read', `
+      <div class="oc-detail-label" style="margin-bottom:8px;">Incident</div>
+      <div class="oc-sub" style="font-size:12.5px; line-height:1.6;">${d.incidentLabel}. The graph projects the investigation onto the four ICAM contributing-factor layers and the corrective actions that address them.</div>
+      <div class="oc-kv" style="margin-top:14px;">
+        <span class="k">layers analysed</span><span class="v">${4-holes} of 4</span>
+        <span class="k">corrective actions</span><span class="v">${d.action.targets.length} layer(s) addressed</span>
+        <span class="k">grounding</span><span class="v" style="color:var(--read-ink);">passed</span>
+      </div>
+      <div style="margin-top:14px;"><a class="oc-link" href="Assurance - Scorecard.html"><i class="ph ph-clipboard-text"></i> Open full scorecard</a></div>
+    `);
+  }
+  function selectAction(){
+    selected='action'; draw();
+    const d = SCEN[scenario];
+    const single = d.action.targets.length===1;
+    setEv('ph-wrench', 'Corrective action', single?'addresses 1 layer':'addresses '+d.action.targets.length+' layers', single?'err':'read', `
+      <div class="oc-detail-label" style="margin-bottom:8px;">Corrective action ↔ cause linkage</div>
+      <div class="oc-sub" style="font-size:12.5px; line-height:1.6;">${d.action.label} — ${d.action.sub}.</div>
+      <div class="oc-sub" style="font-size:12px; line-height:1.6; margin-top:10px;">Addresses: ${d.action.targets.map(t=>LAYERS.find(L=>L.key===t).label).join(', ')}.</div>
+      ${single?`<div class="callout"><i class="ph ph-warning"></i><div class="t">The sole action targets the <b>individual</b>, not the systemic defences. Retraining one person will not prevent recurrence — the Consistency dimension fails.</div></div>`
+              :`<div class="callout"><i class="ph ph-check-circle" style="color:#19A05F;"></i><div class="t">Actions map across every contributing-factor layer — the Consistency dimension passes.</div></div>`}
+    `);
+  }
+  function selectEvidence(){
+    selected='evidence'; draw();
+    const d = SCEN[scenario];
+    setEv('ph-files', 'Evidence', 'grounded', 'read', `
+      <div class="oc-detail-label" style="margin-bottom:8px;">Factual grounding</div>
+      <div class="oc-sub" style="font-size:12.5px; line-height:1.6;">${d.evidence.label} — ${d.evidence.sub}. Every claim in the investigation traces to one of these referenced records (Cortex Search RAG).</div>
+      <div class="callout"><i class="ph ph-check-circle" style="color:#19A05F;"></i><div class="t">Grounding passes — the investigation invents no facts. Note: a well-grounded investigation can still fail on completeness and causal validity, as the holes above show.</div></div>
+    `);
+  }
+
+  function setScenario(s){
+    scenario=s; selected=null;
+    document.getElementById('segDef').classList.toggle('on', s==='deficient');
+    document.getElementById('segPass').classList.toggle('on', s==='assured');
+    document.getElementById('graphHint').innerHTML = SCEN[s].hint;
+    draw();
+    selectIncident();
+  }
+
+  setScenario('deficient');
+</script>
+<script src="assets/mobile-nav-assurance.js" defer></script>
+</body>
+</html>

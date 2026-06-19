@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Incident Investigation Assurance — design artifacts</title>
+<link rel="stylesheet" href="assets/console-system.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<meta name="description" content="AI assurance for mining incident-investigation quality — an ICAM-rubric eval harness: deterministic gates + an isolated LLM judge produce a per-dimension PASS/FAIL scorecard with rationale. Assist, don't decide; humans sign off.">
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Incident Investigation Assurance">
+<meta property="og:title" content="Incident Investigation Assurance">
+<meta property="og:description" content="An ICAM-rubric eval harness for mining incident investigations — deterministic gates + an isolated LLM judge → per-dimension PASS/FAIL + rationale, human-in-the-loop.">
+<style>
+  body{ background:#0A0B0D; color:#fff; min-height:100vh; }
+  .wrap{ max-width:1080px; margin:0 auto; padding:56px 28px 80px; }
+  .hero{ display:flex; align-items:center; gap:14px; margin-bottom:8px; }
+  .hero .mark{ width:46px; height:46px; border-radius:12px; background:var(--accent-cyan); display:grid; place-items:center; font-size:24px; color:#fff; }
+  h1{ font-family:var(--font-display); font-weight:700; font-size:34px; margin:0; letter-spacing:-.01em; }
+  .sub{ color:#9aa1ad; font-size:14px; max-width:70ch; line-height:1.6; margin:14px 0 8px; }
+  .note{ font-family:var(--font-mono); font-size:11px; color:#6b7280; margin-bottom:14px; }
+  .pills{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:36px; }
+  .mp{ font-family:var(--font-mono); font-size:10px; letter-spacing:.06em; text-transform:uppercase; padding:4px 10px; border-radius:999px; border:1px solid #23262d; color:#9aa1ad; }
+  .mp.on{ border-color:var(--accent-cyan); color:#7cc4ff; background:rgba(20,153,255,.1); }
+  .grp{ font-family:var(--font-mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:#6b7280; margin:34px 0 14px; }
+  .grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(248px,1fr)); gap:12px; }
+  a.card{ display:flex; align-items:flex-start; gap:12px; padding:16px; background:#15171b; border:1px solid #23262d; border-radius:12px; color:#fff; text-decoration:none; transition:all .18s ease; }
+  a.card:hover{ border-color:var(--accent-cyan); background:#1a1d22; transform:translateY(-1px); }
+  a.card i{ font-size:20px; color:var(--accent-cyan); margin-top:1px; flex:none; }
+  a.card .t{ font-size:14px; font-weight:600; }
+  a.card .d{ font-size:11.5px; color:#9aa1ad; margin-top:3px; line-height:1.45; }
+  .tag{ margin-left:auto; font-family:var(--font-mono); font-size:9px; letter-spacing:.06em; text-transform:uppercase; padding:2px 7px; border-radius:6px; background:rgba(20,153,255,.15); color:#7cc4ff; flex:none; }
+  a.card.hero-card{ background:linear-gradient(180deg,#16202b,#15171b); border-color:#2a3d4d; }
+  .flow{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-family:var(--font-mono); font-size:11px; color:#9aa1ad; background:#101216; border:1px solid #23262d; border-radius:12px; padding:16px 18px; margin-top:8px; }
+  .flow .step{ color:#cfd4dc; }
+  .flow .arr{ color:#4a5160; }
+  .flow .gate{ color:#7cc4ff; } .flow .judge{ color:#c3b8f5; } .flow .human{ color:#f0b35e; }
+  .foot{ margin-top:48px; font-size:12px; color:#6b7280; line-height:1.7; border-top:1px solid #23262d; padding-top:20px; }
+  .foot b{ color:#9aa1ad; font-weight:600; }
+  @media (max-width:768px){ .wrap{ padding-top:74px; padding-bottom:84px; } }
+  @media (max-width:480px){ .grid{ grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:8px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hero"><span class="mark"><i class="ph ph-shield-check"></i></span><h1>Incident Investigation Assurance</h1></div>
+  <p class="sub">UI design artifacts for an <b style="color:#cfd4dc;">AI assurance / QA layer</b> over mining incident investigations — "was this incident investigated as thoroughly and correctly as it should have been?" The same controlled, auditable eval machine as the Graph Query Agent, re-pointed at the <b style="color:#cfd4dc;">ICAM</b> rubric and a Snowflake data plane.</p>
+  <p class="note">Static mockups · no backend / no database required · open any screen below</p>
+  <div class="pills">
+    <span class="mp on">ICAM rubric</span>
+    <span class="mp on">deterministic gates + isolated LLM judge</span>
+    <span class="mp on">per-dimension PASS/FAIL + rationale</span>
+    <span class="mp on">human-in-the-loop</span>
+    <span class="mp on">ISO/IEC 25059</span>
+  </div>
+
+  <div class="grp">The harness · per incident</div>
+  <div class="flow">
+    <span class="step">incident + evidence</span><span class="arr">→</span>
+    <span class="gate">deterministic gates</span><span class="arr">→</span>
+    <span class="step">grounding (RAG)</span><span class="arr">→</span>
+    <span class="judge">isolated ICAM judge</span><span class="arr">→</span>
+    <span class="step">scorecard</span><span class="arr">→</span>
+    <span class="human">FAIL → HSE reviewer</span>
+  </div>
+
+  <div class="grp">Screens</div>
+  <div class="grid">
+    <a class="card hero-card" href="Assurance - Scorecard.html"><i class="ph ph-clipboard-text"></i><div><div class="t">Scorecard</div><div class="d">Per-dimension PASS/FAIL + rationale on the worked example. Grounding + judge contract.</div></div><span class="tag">start</span></a>
+    <a class="card" href="Assurance - ICAM graph.html"><i class="ph ph-share-network"></i><div><div class="t">ICAM graph</div><div class="d">Contributing-factor graph — missing layers show as holes in the Swiss cheese.</div></div><span class="tag">no-dep</span></a>
+    <a class="card" href="Assurance - Programme.html"><i class="ph ph-chart-bar"></i><div><div class="t">Programme</div><div class="d">Corpus dashboard — FAIL-reason distribution, KPI targets, judge↔expert κ.</div></div></a>
+    <a class="card" href="Assurance - Reviewer.html"><i class="ph ph-user-check"></i><div><div class="t">Reviewer queue</div><div class="d">HSE sign-off — assure / return for rework, with override logging.</div></div></a>
+  </div>
+
+  <div class="grp">Platform</div>
+  <div class="grid">
+    <a class="card" href="index.html"><i class="ph ph-graph"></i><div><div class="t">Graph Query Agent</div><div class="d">The base platform this assurance layer extends.</div></div></a>
+  </div>
+
+  <div class="foot">
+    <b>What it is.</b> An assurance layer that catches deficient investigations before the regulator does. It evaluates two things it can do well — <b>process rigour / completeness</b> (was ICAM followed across all four contributing-factor layers?) and <b>factual grounding</b> (does every claim trace to real evidence?) — and <i>flags, but does not decide</i>, on true root-cause correctness. Cheap deterministic gates run first; an isolated, locked LLM judge then scores each dimension PASS/FAIL with a written rationale citing the ICAM layer and the evidence. Results are written to a durable, queryable store; any FAIL routes to a qualified HSE reviewer.<br><br>
+    <b>Governance.</b> Human-in-the-loop is mandatory — safety-critical and regulated, the harness triages and explains; humans sign off, never autonomous. Designed to be demonstrably structured under ISO/IEC 25059, governed by ISO/IEC 42001, operated with the NIST AI RMF Measure function. Illustrative data only — the worked example (INC-2026-0412) is fictional.
+  </div>
+</div>
+<script src="assets/mobile-nav-assurance.js" defer></script>
+</body>
+</html>
