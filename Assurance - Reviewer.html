@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Incident Assurance — Reviewer queue</title>
+<link rel="stylesheet" href="assets/console-system.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<meta name="description" content="Human-in-the-loop assurance for mining incident investigations — the harness flags and explains under the ICAM rubric; a qualified HSE reviewer signs off. Every override is logged.">
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Incident Assurance">
+<meta property="og:title" content="Incident Assurance — Reviewer queue">
+<meta property="og:description" content="The harness triages and explains under the ICAM rubric; a qualified HSE reviewer decides. Nothing is auto-closed; every override is logged.">
+<meta property="og:url" content="https://graphagent.eqr.vc/">
+<meta property="og:image" content="https://graphagent.eqr.vc/assets/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Incident Assurance — Reviewer queue">
+<meta name="twitter:description" content="The harness triages and explains under the ICAM rubric; a qualified HSE reviewer decides. Nothing is auto-closed; every override is logged.">
+<meta name="twitter:image" content="https://graphagent.eqr.vc/assets/og-image.png">
+<style>
+  html,body{ height:100%; }
+  body{ margin:0; }
+
+  /* wider work pane so the queue cards breathe */
+  .oc-split{ grid-template-columns: minmax(420px, 1fr) 1.15fr; }
+
+  /* ---- queue list ---- */
+  .q-head{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .q-count{ font-family:var(--font-mono); font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-faint); }
+  .q-list{ display:flex; flex-direction:column; gap:12px; }
+  .q-card{ text-align:left; width:100%; background:#fff; border:1.5px solid var(--ink-line); border-radius:var(--r-lg); box-shadow:var(--shadow-rest); padding:14px 16px; cursor:pointer; display:flex; flex-direction:column; gap:9px; transition:border-color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease); font:inherit; color:var(--ink); }
+  .q-card:hover{ border-color:var(--ink-faint); box-shadow:var(--shadow-hover); }
+  .q-card.sel{ border-color:var(--accent-cyan); box-shadow:0 0 0 3px var(--accent-cyan-soft); }
+  .q-card .q-top{ display:flex; align-items:center; gap:9px; }
+  .q-card .q-id{ font-family:var(--font-mono); font-size:11.5px; color:#0C6FC2; font-weight:500; }
+  .q-card .q-site{ font-family:var(--font-mono); font-size:10.5px; color:var(--ink-faint); }
+  .q-card .q-time{ margin-left:auto; font-family:var(--font-mono); font-size:10px; color:var(--ink-faint); }
+  .q-card .q-title{ font-size:13.5px; font-weight:600; line-height:1.35; }
+  .q-card .q-dims{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+
+  /* tiny dimension pills */
+  .dpill{ display:inline-flex; align-items:center; gap:5px; font-family:var(--font-mono); font-size:9.5px; letter-spacing:.02em; text-transform:none; border-radius:999px; padding:3px 8px; border:1px solid; white-space:nowrap; }
+  .dpill .d{ width:6px; height:6px; border-radius:50%; background:currentColor; }
+  .dpill.pass{ color:var(--read-ink); border-color:#BFE6D2; background:var(--read-soft); }
+  .dpill.fail{ color:var(--err); border-color:#F3BCBE; background:var(--err-soft); }
+
+  /* ---- review panel (evidence) ---- */
+  .rv-title{ font-size:17px; font-weight:600; letter-spacing:-.01em; line-height:1.3; }
+  .rv-meta{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:8px; }
+  .rv-mono{ font-family:var(--font-mono); font-size:11px; color:var(--ink-soft); }
+  .rv-mono b{ color:var(--ink); font-weight:500; }
+
+  .dimrow{ display:flex; gap:12px; padding:12px 0; border-bottom:1px solid var(--hair); }
+  .dimrow:last-child{ border-bottom:none; }
+  .dimrow .dv{ flex:none; padding-top:1px; }
+  .dimrow .dx{ min-width:0; }
+  .dimrow .dn{ font-size:13px; font-weight:600; }
+  .dimrow .dr{ font-size:12.5px; color:var(--ink-soft); line-height:1.5; margin-top:3px; }
+
+  /* big verdict pill */
+  .vpill{ display:inline-flex; align-items:center; gap:6px; font-family:var(--font-mono); font-size:10px; letter-spacing:.04em; text-transform:uppercase; border-radius:999px; padding:4px 10px; border:1px solid; white-space:nowrap; }
+  .vpill .d{ width:7px; height:7px; border-radius:50%; background:currentColor; }
+  .vpill.pass{ color:var(--read-ink); border-color:#BFE6D2; background:var(--read-soft); }
+  .vpill.fail{ color:var(--err); border-color:#F3BCBE; background:var(--err-soft); }
+
+  /* deterministic gates grid */
+  .gates{ display:grid; grid-template-columns:1fr 1fr; gap:9px 16px; }
+  .gate{ display:flex; align-items:center; gap:9px; font-size:12.5px; }
+  .gate .gi{ font-size:16px; flex:none; }
+  .gate.ok .gi{ color:var(--read-ink); }
+  .gate.no .gi{ color:var(--err); }
+  .gate.no span{ color:var(--err); font-weight:500; }
+
+  /* reviewer decision area */
+  .decision{ display:flex; flex-direction:column; gap:14px; }
+  .dec-note{ display:flex; gap:10px; align-items:flex-start; padding:12px 14px; border:1.5px solid var(--hair); background:var(--paper); border-radius:var(--r-sm); }
+  .dec-note i{ color:var(--accent-cyan); font-size:18px; margin-top:1px; flex:none; }
+  .dec-btns{ display:flex; gap:10px; flex-wrap:wrap; }
+
+  /* logged confirmation state */
+  .logged{ display:none; flex-direction:column; gap:12px; }
+  .logged.show{ display:flex; }
+  .logged-banner{ display:flex; align-items:center; gap:12px; padding:14px 16px; border-radius:var(--r-md); border:1.5px solid; }
+  .logged-banner.rework{ border-color:#F3D6A5; background:var(--write-soft); color:var(--write-ink); }
+  .logged-banner.assured{ border-color:#BFE6D2; background:var(--read-soft); color:var(--read-ink); }
+  .logged-banner i{ font-size:22px; flex:none; }
+  .logged-banner .lt{ font-weight:600; font-size:13.5px; }
+  .logged-banner .ls{ font-size:11.5px; opacity:.9; margin-top:2px; }
+
+  /* ===== approval / sign-off modal (from Console - Ask) ===== */
+  .oc-modal-backdrop{ position:fixed; inset:0; background:rgba(27,30,44,.55); display:none; align-items:center; justify-content:center; z-index:var(--z-modal); padding:24px; }
+  .oc-modal-backdrop.open{ display:flex; }
+  .oc-modal{ width:min(580px,100%); max-height:92vh; overflow:auto; background:var(--card); border:1px solid var(--ink-line); border-radius:var(--r-lg); box-shadow:0 24px 64px rgba(10,11,13,.28); }
+  .m-accent{ height:5px; background:var(--write); }
+  .m-accent.assure{ background:var(--read); }
+  .m-head{ display:flex; align-items:center; gap:13px; padding:18px 22px; border-bottom:1.5px solid var(--hair); }
+  .m-head .ic{ width:40px; height:40px; border-radius:var(--r-sm); display:grid; place-items:center; background:var(--write-soft); border:1.5px solid var(--write); color:var(--write-ink); font-size:21px; flex:none; }
+  .m-head .ic.assure{ background:var(--read-soft); border-color:var(--read); color:var(--read-ink); }
+  .m-title{ font-weight:700; font-size:16px; line-height:1.2; }
+  .m-sub{ font-size:12px; color:var(--ink-soft); margin-top:2px; }
+  .close-x{ margin-left:auto; cursor:pointer; color:var(--ink-faint); font-size:22px; background:none; border:none; display:grid; place-items:center; }
+  .close-x:hover{ color:var(--ink); }
+  .m-body{ padding:20px 22px; display:flex; flex-direction:column; gap:18px; }
+  .m-foot{ display:flex; align-items:center; gap:12px; padding:16px 22px; border-top:1.5px solid var(--hair); background:var(--paper-warm); }
+  .m-warn{ display:flex; gap:10px; align-items:flex-start; padding:12px 14px; border:1.5px solid var(--write); background:var(--write-soft); border-radius:var(--r-sm); }
+  .m-warn.assure{ border-color:var(--read); background:var(--read-soft); }
+  .m-warn i{ color:var(--write-ink); font-size:18px; margin-top:1px; flex:none; }
+  .m-warn.assure i{ color:var(--read-ink); }
+  .m-warn b{ color:var(--write-ink); }
+  .m-warn.assure b{ color:var(--read-ink); }
+  .m-check{ display:flex; gap:10px; align-items:center; font-size:13px; cursor:pointer; user-select:none; }
+  .m-check input{ width:18px; height:18px; accent-color:var(--write-ink); flex:none; }
+  .keyrow{ display:flex; align-items:center; gap:10px; font-family:var(--font-mono); font-size:12px; background:var(--card-sunk); border:1.5px solid var(--hair); border-radius:var(--r-sm); padding:9px 12px; }
+  .keyrow .kk{ color:var(--ink-faint); }
+  .keyrow .kv{ color:var(--ink); font-weight:500; word-break:break-all; }
+  .m-reason{ width:100%; font-family:var(--font-body); font-size:13px; color:var(--ink); background:#fff; border:1.5px solid var(--ink-line); border-radius:var(--r-sm); padding:10px 12px; resize:vertical; min-height:74px; }
+  .m-reason:focus{ outline:none; border-color:var(--accent-cyan); box-shadow:0 0 0 3px var(--accent-cyan-soft); }
+  .m-reason::placeholder{ color:var(--ink-faint); }
+
+  @media (max-width:600px){
+    .oc-modal-backdrop{ padding:16px; }
+    .m-head{ padding:14px 16px; }
+    .m-body{ padding:16px; gap:14px; }
+    .m-foot{ padding:13px 16px; flex-wrap:wrap; }
+    .gates{ grid-template-columns:1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="oc">
+  <div class="oc-app">
+
+    <!-- ===================== LEFT RAIL ===================== -->
+    <aside class="oc-rail">
+      <a class="oc-brand" href="assurance-index.html" title="Back to all screens"><span class="oc-brandmark"><i class="ph ph-shield-check"></i></span><div class="wm">Incident Assurance<small>ICAM · assurance</small></div></a>
+      <div class="oc-navgrp">Assurance</div>
+      <a class="oc-nav" href="Assurance - Scorecard.html" style="text-decoration:none;"><i class="ph ph-clipboard-text"></i> Scorecard</a>
+      <a class="oc-nav" href="Assurance - ICAM graph.html" style="text-decoration:none;"><i class="ph ph-share-network"></i> ICAM graph</a>
+      <a class="oc-nav" href="Assurance - Programme.html" style="text-decoration:none;"><i class="ph ph-chart-bar"></i> Programme</a>
+      <div class="oc-nav on"><i class="ph ph-user-check"></i> Reviewer queue</div>
+      <div class="oc-navgrp">Platform</div>
+      <a class="oc-nav" href="index.html" style="text-decoration:none;"><i class="ph ph-graph"></i> Graph Query Agent</a>
+      <div class="oc-rail-foot">Assist, don't decide. The harness flags &amp; explains; a qualified HSE reviewer signs off.</div>
+    </aside>
+
+    <!-- ===================== MAIN ===================== -->
+    <div class="oc-main">
+
+      <!-- top bar -->
+      <div class="oc-top">
+        <span class="crumb">Assurance / <b>Reviewer queue</b></span>
+        <span class="oc-spacer"></span>
+        <span class="oc-meta">reviewer <b>n.forshteyn</b></span>
+        <span class="oc-meta">rubric <b>icam-v1.3</b></span>
+      </div>
+
+      <!-- master-detail split -->
+      <div class="oc-split">
+
+        <!-- ---------- WORK PANE (left) : flagged queue ---------- -->
+        <div class="oc-work">
+          <div class="q-head">
+            <span class="oc-eyebrow" style="margin:0;">Flagged for review</span>
+            <span class="oc-spacer"></span>
+            <span class="q-count">5 awaiting · newest first</span>
+          </div>
+          <div class="oc-sub" style="font-size:11.5px; display:flex; align-items:center; gap:7px;">
+            <i class="ph ph-funnel" style="color:var(--ink-faint);"></i>
+            Every item here failed ≥1 ICAM dimension or a hard compliance gate. The harness routed them; it did not close them.
+          </div>
+
+          <div class="q-list" id="qlist">
+            <!-- rendered by JS -->
+          </div>
+
+          <div class="oc-sub" style="font-size:11.5px; margin-top:6px; display:flex; align-items:center; gap:7px;">
+            <i class="ph ph-lock-simple" style="color:var(--read-ink);"></i>
+            The harness never closes an investigation. Assured / returned states are set by a human and logged.
+          </div>
+        </div>
+
+        <!-- ---------- EVIDENCE PANE (right) : review panel ---------- -->
+        <div class="oc-evidence">
+          <div class="oc-ev-head">
+            <i class="ph ph-gavel" style="font-size:18px;"></i>
+            <span class="oc-ev-title">Review &amp; sign-off</span>
+            <span class="oc-spacer"></span>
+            <span class="vpill fail" id="rvOverall"><span class="d"></span>FAIL · flagged</span>
+          </div>
+          <div class="oc-ev-body" id="evBody">
+
+            <!-- review header -->
+            <div class="rv-title" id="rvTitle">—</div>
+            <div class="rv-meta">
+              <span class="rv-mono" id="rvId"></span>
+              <span class="rv-mono" id="rvSite"></span>
+            </div>
+            <div class="rv-meta" style="margin-top:6px;">
+              <span class="oc-pill dim"><span class="dot"></span>rubric icam-v1.3</span>
+              <span class="rv-mono">judge_model <b>claude</b> (via Cortex AI_COMPLETE)</span>
+            </div>
+
+            <!-- deterministic gates -->
+            <div style="margin-top:24px;">
+              <div class="oc-detail-label" style="margin-bottom:12px;">Deterministic gates · cheap, no LLM</div>
+              <div class="gates" id="rvGates"></div>
+            </div>
+
+            <div class="oc-divider" style="margin:22px 0;"></div>
+
+            <!-- per-dimension verdicts -->
+            <div class="oc-detail-label" style="margin-bottom:4px;">ICAM dimensions · per-dimension verdict + rationale</div>
+            <div id="rvDims"></div>
+
+            <div class="oc-divider" style="margin:22px 0;"></div>
+
+            <!-- reviewer decision -->
+            <div class="oc-detail-label" style="margin-bottom:12px;">Reviewer decision</div>
+
+            <div class="decision" id="decisionArea">
+              <div class="dec-note">
+                <i class="ph ph-info"></i>
+                <div style="font-size:12.5px; color:var(--ink-soft);">The harness flagged and explained this investigation. <b style="color:var(--ink);">You decide.</b> Return it for rework, or assure it over the machine's objection — either way your decision and reason are recorded against the run.</div>
+              </div>
+              <div class="dec-btns">
+                <span class="oc-btn amber" onclick="openDecision('rework')"><i class="ph ph-arrow-u-up-left"></i> Return for rework</span>
+                <span class="oc-btn" onclick="openDecision('assure')"><i class="ph ph-shield-check"></i> Assure anyway (override)</span>
+              </div>
+            </div>
+
+            <!-- logged confirmation (hidden until a decision is made) -->
+            <div class="logged" id="loggedArea">
+              <div class="logged-banner" id="loggedBanner">
+                <i class="ph ph-check-circle"></i>
+                <div>
+                  <div class="lt" id="loggedTitle"></div>
+                  <div class="ls" id="loggedSub"></div>
+                </div>
+              </div>
+              <div class="dec-note">
+                <i class="ph ph-arrows-clockwise"></i>
+                <div style="font-size:12px; color:var(--ink-soft);">Override logged. Every reviewer decision that differs from the judge feeds <b style="color:var(--ink);">rubric re-calibration</b> (§11.3) — the labels are validated against humans over time.</div>
+              </div>
+              <div><span class="oc-link" onclick="undoDecision()"><i class="ph ph-arrow-counter-clockwise"></i> Undo (demo)</span></div>
+            </div>
+
+            <div class="oc-divider" style="margin:22px 0;"></div>
+
+            <!-- retained assessment record -->
+            <div class="oc-detail-label" style="margin-bottom:8px;">Assessment record · retained (§11.5)</div>
+            <div class="oc-code" id="rvRecord"></div>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== SIGN-OFF MODAL ===================== -->
+<div class="oc-modal-backdrop" id="decisionModal" role="dialog" aria-modal="true" aria-labelledby="dmTitle">
+  <div class="oc-modal oc">
+    <div class="m-accent" id="dmAccent"></div>
+    <div class="m-head">
+      <span class="ic" id="dmIcon"><i class="ph ph-arrow-u-up-left"></i></span>
+      <div>
+        <div class="m-title" id="dmTitle">Return for rework</div>
+        <div class="m-sub" id="dmSub">Routes this investigation back to the team. Your decision is logged against the run.</div>
+      </div>
+      <button class="close-x" onclick="closeDecision()" aria-label="Cancel"><i class="ph ph-x"></i></button>
+    </div>
+    <div class="m-body">
+      <div class="m-warn" id="dmWarn">
+        <i class="ph ph-warning"></i>
+        <div style="font-size:12.5px;" id="dmWarnText"></div>
+      </div>
+
+      <div>
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+          <span class="oc-eyebrow" style="margin:0;">Incident</span>
+          <span class="oc-spacer"></span>
+          <span class="vpill fail"><span class="d"></span>judge: FAIL</span>
+        </div>
+        <div class="rv-title" style="font-size:14px;" id="dmIncident"></div>
+      </div>
+
+      <div>
+        <div class="oc-detail-label" style="margin-bottom:8px;">Override record · written to investigation_scores</div>
+        <div class="oc-kv">
+          <span class="k">incident</span><span class="v" id="dmKvIncident"></span>
+          <span class="k">judge verdict</span><span class="v">FAIL</span>
+          <span class="k">your verdict</span><span class="v" id="dmKvHuman"></span>
+          <span class="k">dimensions</span><span class="v" id="dmKvDims"></span>
+          <span class="k">reviewer_id</span><span class="v">n.forshteyn</span>
+          <span class="k">timestamp</span><span class="v" id="dmKvTime"></span>
+        </div>
+      </div>
+
+      <div>
+        <div class="oc-detail-label" style="margin-bottom:8px;">Reason <span style="text-transform:none; letter-spacing:0; color:var(--err);">— required, retained, feeds re-calibration</span></div>
+        <textarea class="m-reason" id="dmReason" placeholder="e.g. Returning — investigation omits 3 of 4 ICAM layers and the sole corrective action targets the individual; reopen and analyse organisational factors." oninput="syncDecisionBtn()"></textarea>
+      </div>
+
+      <label class="m-check"><input type="checkbox" id="dmConfirm" onchange="syncDecisionBtn()"> <span id="dmConfirmLabel">I am a qualified HSE reviewer and I am returning this investigation for rework.</span></label>
+    </div>
+    <div class="m-foot">
+      <button class="oc-btn ghost" onclick="closeDecision()">Cancel</button>
+      <span class="oc-spacer"></span>
+      <button class="oc-btn amber" id="dmCommit" onclick="commitDecision()" disabled><i class="ph ph-check"></i> Record decision</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ---- flagged-investigation corpus (illustrative) ----
+  const Q = [
+    {
+      id:'INC-2026-0412', site:'SITE-OLYMPIC', time:'2 h ago',
+      title:'Conveyor CV-07 — fitter hand laceration during roller change',
+      severity:'MTI', notified:'18 h',
+      gates:[['ICAM sections present',true],['Severity coded',true],['Reportable in window (18 h)',true],['Corrective actions ↔ causes',false]],
+      dims:[
+        ['Completeness','FAIL','Only 1 of 4 ICAM layers covered — organisational factors, task/environmental conditions and absent/failed defences are missing.'],
+        ['Causal validity','FAIL','Stops at "the fitter did not apply a personal lock" — no latent/organisational why: why did the permit system allow an energised belt? was isolation verified by a second person?'],
+        ['Factual grounding','PASS','Claims trace to evidence — the isolation permit record, the maintenance work order and the injury report are referenced and consistent.'],
+        ['Consistency','FAIL','Sole corrective action "retrain the fitter" addresses the individual only, not the absent defence or any organisational factor. Retraining one person will not prevent recurrence.'],
+        ['Compliance','PASS','MTI coding is consistent with the described harm; reportable flag set and regulator notified within the 24 h window.']
+      ]
+    },
+    {
+      id:'INC-2026-0431', site:'SITE-NORTH', time:'5 h ago',
+      title:'Light vehicle / haul truck near-miss at intersection 4',
+      severity:'HiPo', notified:'late',
+      gates:[['ICAM sections present',true],['Severity coded',true],['Reportable in window',false],['Corrective actions ↔ causes',true]],
+      dims:[
+        ['Completeness','PASS','All four ICAM layers are substantively analysed, including traffic-management controls and supervision.'],
+        ['Causal validity','PASS','Immediate→latent chain is logical and explores the traffic-management plan and fatigue scheduling.'],
+        ['Factual grounding','PASS','Claims trace to the GPS proximity log, the traffic-management plan and shift roster.'],
+        ['Consistency','PASS','Corrective actions map to the identified contributing factors.'],
+        ['Compliance','FAIL','High-potential near-miss not notified within the legal window (logged at 31 h). Hard compliance gate failed.']
+      ]
+    },
+    {
+      id:'INC-2026-0420', site:'SITE-OLYMPIC', time:'8 h ago',
+      title:'Respirable dust exposure exceedance — crusher operator',
+      severity:'OIE', notified:'24 h',
+      gates:[['ICAM sections present',true],['Severity coded',true],['Reportable in window (22 h)',true],['Corrective actions ↔ causes',true]],
+      dims:[
+        ['Completeness','PASS','All four ICAM layers analysed, including ventilation design and exposure-monitoring regime.'],
+        ['Causal validity','PASS','Chain links the exceedance to a failed dust-suppression control and a deferred maintenance decision.'],
+        ['Factual grounding','FAIL','Two claims are unsupported — the asserted exposure duration and the "suppression system serviced last month" statement have no referenced monitoring or work-order record.'],
+        ['Consistency','PASS','Corrective actions reference the identified factors.'],
+        ['Compliance','PASS','OIE coding consistent; reportable flag set and notified within window.']
+      ]
+    },
+    {
+      id:'INC-2026-0405', site:'SITE-NORTH', time:'1 d ago',
+      title:'Dropped object from elevated walkway — no injury',
+      severity:'HiPo', notified:'20 h',
+      gates:[['ICAM sections present',true],['Severity coded',true],['Reportable in window (20 h)',true],['Corrective actions ↔ causes',false]],
+      dims:[
+        ['Completeness','PASS','All four ICAM layers are addressed at least briefly.'],
+        ['Causal validity','FAIL','Concludes "tool not tethered" and stops there — does not examine the toolbox-talk/permit gap, walkway housekeeping standard, or supervision (latent factors unexplored).'],
+        ['Factual grounding','PASS','Claims trace to the inspection photo and the elevated-work permit.'],
+        ['Consistency','FAIL','Action "remind crew to tether tools" is generic and does not map to a systemic defence.'],
+        ['Compliance','PASS','HiPo coding consistent; notified within window.']
+      ]
+    },
+    {
+      id:'INC-2026-0398', site:'SITE-WEST', time:'1 d ago',
+      title:'Mobile plant fire — front-end loader engine bay',
+      severity:'MTI', notified:'19 h',
+      gates:[['ICAM sections present',false],['Severity coded',true],['Reportable in window (19 h)',true],['Corrective actions ↔ causes',true]],
+      dims:[
+        ['Completeness','FAIL','Required ICAM sections incomplete — the absent/failed-defences layer (fire-suppression, fuel-line inspection) is empty.'],
+        ['Causal validity','PASS','Where analysed, the chain from fuel leak to ignition source is logical and evidence-linked.'],
+        ['Factual grounding','PASS','Claims trace to the maintenance history and the fire-suppression service record.'],
+        ['Consistency','PASS','Corrective actions map to the identified factors.'],
+        ['Compliance','PASS','MTI coding consistent; notified within window.']
+      ]
+    }
+  ];
+
+  let cur = 0;
+  const decided = {}; // id -> {verdict, reason}
+
+  function dimPills(dims){
+    return dims.map(d=>{
+      const fail = d[1]==='FAIL';
+      return `<span class="dpill ${fail?'fail':'pass'}"><span class="d"></span>${d[0]}</span>`;
+    }).join('');
+  }
+
+  function renderQueue(){
+    const wrap = document.getElementById('qlist');
+    wrap.innerHTML = Q.map((it,i)=>{
+      const dec = decided[it.id];
+      const overall = dec
+        ? (dec.verdict==='assured'
+            ? `<span class="vpill pass" style="font-size:9px; padding:3px 9px;"><span class="d"></span>assured · logged</span>`
+            : `<span class="vpill" style="font-size:9px; padding:3px 9px; color:var(--write-ink); border-color:#F3D6A5; background:var(--write-soft);"><span class="d"></span>returned · logged</span>`)
+        : `<span class="vpill fail" style="font-size:9px; padding:3px 9px;"><span class="d"></span>FAIL · flagged</span>`;
+      return `
+      <button class="q-card ${i===cur?'sel':''}" onclick="select(${i})">
+        <div class="q-top">
+          <span class="q-id">${it.id}</span>
+          <span class="q-site">${it.site}</span>
+          <span class="q-time">${it.time}</span>
+        </div>
+        <div class="q-title">${it.title}</div>
+        <div class="q-dims">${dimPills(it.dims)}</div>
+        <div class="q-top" style="margin-top:2px;">${overall}</div>
+      </button>`;
+    }).join('');
+  }
+
+  function select(i){
+    cur = i;
+    renderQueue();
+    renderReview();
+  }
+
+  function renderReview(){
+    const it = Q[cur];
+    document.getElementById('rvTitle').textContent = it.title;
+    document.getElementById('rvId').innerHTML = `incident <b>${it.id}</b>`;
+    document.getElementById('rvSite').innerHTML = `site <b>${it.site}</b> · severity <b>${it.severity}</b>`;
+
+    // gates
+    document.getElementById('rvGates').innerHTML = it.gates.map(g=>`
+      <div class="gate ${g[1]?'ok':'no'}">
+        <i class="ph ${g[1]?'ph-check-circle':'ph-x-circle'} gi"></i>
+        <span>${g[0]}</span>
+      </div>`).join('');
+
+    // dimensions
+    document.getElementById('rvDims').innerHTML = it.dims.map(d=>{
+      const fail = d[1]==='FAIL';
+      return `
+      <div class="dimrow">
+        <div class="dv"><span class="vpill ${fail?'fail':'pass'}"><span class="d"></span>${d[1]}</span></div>
+        <div class="dx">
+          <div class="dn">${d[0]}</div>
+          <div class="dr">${d[2]}</div>
+        </div>
+      </div>`;
+    }).join('');
+
+    const failed = it.dims.filter(d=>d[1]==='FAIL').map(d=>d[0]);
+    const dec = decided[it.id];
+
+    // overall pill in header
+    const ov = document.getElementById('rvOverall');
+    if(dec){
+      if(dec.verdict==='assured'){ ov.className='vpill pass'; ov.innerHTML='<span class="d"></span>assured · logged'; }
+      else { ov.className='vpill'; ov.style.cssText='color:var(--write-ink); border-color:#F3D6A5; background:var(--write-soft);'; ov.innerHTML='<span class="d"></span>returned · logged'; }
+    } else {
+      ov.className='vpill fail'; ov.style.cssText=''; ov.innerHTML='<span class="d"></span>FAIL · flagged';
+    }
+
+    // decision vs logged
+    const decArea = document.getElementById('decisionArea');
+    const logArea = document.getElementById('loggedArea');
+    if(dec){
+      decArea.style.display='none';
+      logArea.classList.add('show');
+      const banner = document.getElementById('loggedBanner');
+      if(dec.verdict==='assured'){
+        banner.className='logged-banner assured';
+        banner.querySelector('i').className='ph ph-shield-check';
+        document.getElementById('loggedTitle').textContent='Assured with override · logged';
+        document.getElementById('loggedSub').textContent='Human verdict recorded against the judge’s FAIL. Reviewer n.forshteyn · '+dec.time;
+      } else {
+        banner.className='logged-banner rework';
+        banner.querySelector('i').className='ph ph-arrow-u-up-left';
+        document.getElementById('loggedTitle').textContent='Returned for rework · logged';
+        document.getElementById('loggedSub').textContent='Routed back to the investigating team. Reviewer n.forshteyn · '+dec.time;
+      }
+    } else {
+      decArea.style.display='flex';
+      logArea.classList.remove('show');
+    }
+
+    // retained assessment record
+    const verdictLine = dec
+      ? `  <span class="str">"reviewer_decision"</span>: { <span class="str">"verdict"</span>: <span class="str">"${dec.verdict==='assured'?'assured_override':'returned_for_rework'}"</span>,
+                          <span class="str">"reviewer_id"</span>: <span class="str">"n.forshteyn"</span>, <span class="str">"reason"</span>: <span class="str">"…"</span>, <span class="str">"ts"</span>: <span class="str">"${dec.time}"</span> }`
+      : `  <span class="str">"reviewer_decision"</span>: <span class="pm">null</span>   <span class="kw">// awaiting human sign-off — not auto-closed</span>`;
+    document.getElementById('rvRecord').innerHTML =
+`{
+  <span class="str">"incident_id"</span>: <span class="str">"${it.id}"</span>,
+  <span class="str">"rubric_version"</span>: <span class="str">"icam-v1.3"</span>,
+  <span class="str">"judge_model"</span>: <span class="str">"claude (via Cortex AI_COMPLETE)"</span>,
+  <span class="str">"deterministic_gates"</span>: { passed: ${it.gates.filter(g=>g[1]).length}, failed: ${it.gates.filter(g=>!g[1]).length} },
+  <span class="str">"overall_verdict"</span>: <span class="str">"FAIL"</span>,
+  <span class="str">"dimensions_failed"</span>: [${failed.map(f=>`<span class="str">"${f}"</span>`).join(', ')}],
+  <span class="str">"flagged_for_review"</span>: <span class="pm">true</span>,
+${verdictLine}
+}`;
+  }
+
+  // ---- sign-off modal ----
+  let pendingVerdict = null;
+
+  function openDecision(kind){ // 'rework' | 'assure'
+    const it = Q[cur];
+    const failed = it.dims.filter(d=>d[1]==='FAIL').map(d=>d[0]);
+    pendingVerdict = (kind==='assure') ? 'assured' : 'returned';
+
+    const accent = document.getElementById('dmAccent');
+    const icon = document.getElementById('dmIcon');
+    const warn = document.getElementById('dmWarn');
+    const commit = document.getElementById('dmCommit');
+
+    if(kind==='assure'){
+      document.getElementById('dmTitle').textContent='Assure anyway — override the judge';
+      document.getElementById('dmSub').textContent='You are assuring an investigation the harness flagged as FAIL. The override is recorded.';
+      accent.className='m-accent assure';
+      icon.className='ic assure'; icon.innerHTML='<i class="ph ph-shield-check"></i>';
+      warn.className='m-warn assure';
+      document.getElementById('dmWarnText').innerHTML='<b>This overrides a FAIL verdict.</b> You are accepting the investigation despite the machine’s objection. Your reason is retained and audited.';
+      document.getElementById('dmConfirmLabel').textContent='I am a qualified HSE reviewer and I am assuring this investigation over the judge’s FAIL verdict.';
+      commit.className='oc-btn'; commit.style.cssText='background:var(--read); color:#fff; border-color:var(--read);';
+      commit.innerHTML='<i class="ph ph-shield-check"></i> Record decision';
+    } else {
+      document.getElementById('dmTitle').textContent='Return for rework';
+      document.getElementById('dmSub').textContent='Routes this investigation back to the team. Your decision is logged against the run.';
+      accent.className='m-accent';
+      icon.className='ic'; icon.innerHTML='<i class="ph ph-arrow-u-up-left"></i>';
+      warn.className='m-warn';
+      document.getElementById('dmWarnText').innerHTML='<b>Routes back to the investigating team.</b> The investigation is not closed by the harness — it is reopened for the gaps below.';
+      document.getElementById('dmConfirmLabel').textContent='I am a qualified HSE reviewer and I am returning this investigation for rework.';
+      commit.className='oc-btn amber'; commit.style.cssText='';
+      commit.innerHTML='<i class="ph ph-arrow-u-up-left"></i> Record decision';
+    }
+
+    document.getElementById('dmIncident').textContent = it.id + ' · ' + it.title;
+    document.getElementById('dmKvIncident').textContent = it.id;
+    document.getElementById('dmKvHuman').textContent = (kind==='assure') ? 'ASSURE (override)' : 'RETURN_FOR_REWORK';
+    document.getElementById('dmKvDims').textContent = failed.length ? failed.join(', ') : '—';
+    document.getElementById('dmKvTime').textContent = now();
+
+    document.getElementById('dmReason').value='';
+    document.getElementById('dmConfirm').checked=false;
+    syncDecisionBtn();
+    document.getElementById('decisionModal').classList.add('open');
+  }
+
+  function closeDecision(){ document.getElementById('decisionModal').classList.remove('open'); }
+
+  function syncDecisionBtn(){
+    const ok = document.getElementById('dmConfirm').checked && document.getElementById('dmReason').value.trim().length>0;
+    document.getElementById('dmCommit').disabled = !ok;
+  }
+
+  function commitDecision(){
+    const it = Q[cur];
+    decided[it.id] = { verdict: pendingVerdict, reason: document.getElementById('dmReason').value.trim(), time: now() };
+    closeDecision();
+    renderQueue();
+    renderReview();
+  }
+
+  function undoDecision(){
+    delete decided[Q[cur].id];
+    renderQueue();
+    renderReview();
+  }
+
+  function now(){
+    const d = new Date();
+    const p = n => String(n).padStart(2,'0');
+    return `2026-06-19T${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}Z`;
+  }
+
+  // backdrop click + Esc close
+  document.getElementById('decisionModal').addEventListener('click', e=>{ if(e.target.id==='decisionModal') closeDecision(); });
+  document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeDecision(); });
+
+  // init
+  renderQueue();
+  renderReview();
+</script>
+<script src="assets/mobile-nav-assurance.js" defer></script>
+</body>
+</html>
