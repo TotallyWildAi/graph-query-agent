@@ -24,10 +24,13 @@
   @media (max-width:1080px){ .oc-split{ grid-template-columns:1fr; } }
 
   .graph-wrap{ position:relative; background:var(--card); border:1px solid var(--ink-line); border-radius:var(--r-lg); box-shadow:var(--shadow-rest); overflow:hidden; }
-  .graph-wrap svg{ display:block; width:100%; height:auto; }
+  .graph-wrap svg{ display:block; width:100%; height:auto; touch-action:none; }
 
-  /* nodes */
-  .gnode{ cursor:pointer; }
+  /* nodes — draggable */
+  .gnode{ cursor:grab; }
+  .gnode text{ user-select:none; -webkit-user-select:none; pointer-events:none; }
+  .gnode.dragging{ cursor:grabbing; }
+  .gnode.dragging .nbox{ filter:drop-shadow(0 8px 18px rgba(12,18,28,.22)); }
   .gnode .nbox{ transition:filter var(--dur-fast) var(--ease); }
   .gnode:hover .nbox{ filter:drop-shadow(0 4px 10px rgba(12,18,28,.16)); }
   .gnode.sel .nbox{ stroke-width:2.5; }
@@ -86,11 +89,13 @@
         <div class="oc-work">
           <div style="display:flex; align-items:center; gap:10px;">
             <span class="oc-eyebrow" style="margin:0;">Contributing-factor graph</span>
-            <span class="oc-sub" style="font-size:11.5px;" id="graphHint">Each ICAM layer should contribute a barrier. <b>Dashed = not analysed</b> — a hole in the Swiss cheese. Click any node.</span>
+            <span class="oc-sub" style="font-size:11.5px;" id="graphHint">Each ICAM layer should contribute a barrier. <b>Dashed = not analysed</b> — a hole in the Swiss cheese. Drag any card to rearrange; click to inspect.</span>
+            <span class="oc-spacer"></span>
+            <span class="oc-btn ghost sm" onclick="resetLayout()"><i class="ph ph-arrows-in"></i> Reset layout</span>
           </div>
 
           <div class="graph-wrap">
-            <svg id="svg" viewBox="0 0 980 580" preserveAspectRatio="xMidYMid meet" role="img" aria-label="ICAM contributing-factor graph">
+            <svg id="svg" viewBox="0 0 960 620" preserveAspectRatio="xMidYMid meet" role="img" aria-label="ICAM contributing-factor graph">
               <defs>
                 <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
                   <path d="M0,0 L10,5 L0,10 z" fill="#8D8D8D"></path>
@@ -137,17 +142,41 @@
 </div>
 
 <script>
-  // ---------- node geometry (fixed layout) ----------
-  // layers latent -> immediate, stacked left; incident centre-right; action below; evidence bottom-left
+  // ---------- ICAM layers (labels only; geometry lives in POS) ----------
+  // layers latent -> immediate, stacked left; incident centre-right; action below; evidence bottom-centre
   const LAYERS = [
-    {key:'organisational_factors',       label:'Organisational factors',      sub:'latent', x:175, y:80},
-    {key:'task_environmental_conditions',label:'Task / environmental',        sub:'conditions', x:175, y:210},
-    {key:'individual_team_actions',      label:'Individual / team actions',   sub:'immediate', x:175, y:340},
-    {key:'absent_failed_defences',       label:'Absent / failed defences',    sub:'barrier', x:175, y:470}
+    {key:'organisational_factors',       label:'Organisational factors',      sub:'latent'},
+    {key:'task_environmental_conditions',label:'Task / environmental',        sub:'conditions'},
+    {key:'individual_team_actions',      label:'Individual / team actions',   sub:'immediate'},
+    {key:'absent_failed_defences',       label:'Absent / failed defences',    sub:'barrier'}
   ];
-  const INCIDENT = {x:640, y:210};
-  const ACTION   = {x:640, y:430};
-  const EVIDENCE = {x:430, y:520};
+
+  // ---------- node geometry (top-left x,y + w,h) — default layout, no overlap ----------
+  const VW = 960, VH = 620;
+  const DEFAULT_POS = {
+    'layer:organisational_factors':        {x:55,  y:60,  w:240, h:92},
+    'layer:task_environmental_conditions': {x:55,  y:190, w:240, h:92},
+    'layer:individual_team_actions':       {x:55,  y:320, w:240, h:92},
+    'layer:absent_failed_defences':        {x:55,  y:450, w:240, h:92},
+    incident: {x:700, y:230, w:200, h:100},
+    action:   {x:700, y:472, w:215, h:80},
+    evidence: {x:345, y:516, w:255, h:72}
+  };
+  const clone = (o)=>JSON.parse(JSON.stringify(o));
+  let POS = clone(DEFAULT_POS);
+
+  // geometry helpers — anchor edges to box borders so they stay clean after dragging
+  function center(id){ const p=POS[id]; return {cx:p.x+p.w/2, cy:p.y+p.h/2, hw:p.w/2, hh:p.h/2}; }
+  function borderPoint(id, tx, ty){
+    const c=center(id); const dx=tx-c.cx, dy=ty-c.cy;
+    if(dx===0 && dy===0) return {x:c.cx, y:c.cy};
+    const scale = 1/Math.max(Math.abs(dx)/c.hw, Math.abs(dy)/c.hh);
+    return {x:c.cx+dx*scale, y:c.cy+dy*scale};
+  }
+  function edgeBetween(aId, bId){
+    const ca=center(aId), cb=center(bId);
+    return { a:borderPoint(aId, cb.cx, cb.cy), b:borderPoint(bId, ca.cx, ca.cy) };
+  }
 
   const SCEN = {
     deficient: {
@@ -155,7 +184,7 @@
       covered:{ organisational_factors:false, task_environmental_conditions:false, individual_team_actions:true, absent_failed_defences:false },
       action:{ label:'Retrain the fitter', sub:'1 corrective action', targets:['individual_team_actions'], tone:'amber' },
       evidence:{ label:'Permit · WO · injury report', sub:'3 records · grounded ✓' },
-      hint:'Each ICAM layer should contribute a barrier. <b>Dashed = not analysed</b> — a hole in the Swiss cheese. Click any node.',
+      hint:'Each ICAM layer should contribute a barrier. <b>Dashed = not analysed</b> — a hole in the Swiss cheese. Drag to rearrange; click to inspect.',
       detail:{
         organisational_factors:{verdict:'miss', rat:'Not analysed. No examination of why the isolation/permit system or scheduling permitted an energised belt during maintenance.'},
         task_environmental_conditions:{verdict:'miss', rat:'Not analysed. Equipment state, time pressure, communication and supervision at the work front are not examined.'},
@@ -168,7 +197,7 @@
       covered:{ organisational_factors:true, task_environmental_conditions:true, individual_team_actions:true, absent_failed_defences:true },
       action:{ label:'5 actions across layers', sub:'mapped to causes', targets:['organisational_factors','task_environmental_conditions','individual_team_actions','absent_failed_defences'], tone:'amber' },
       evidence:{ label:'JHA · inspection · roster · statements', sub:'grounded ✓' },
-      hint:'All four ICAM layers carry distinct, evidenced findings — no holes — and corrective actions map across every layer. Click any node.',
+      hint:'All four ICAM layers carry distinct, evidenced findings — no holes — and corrective actions map across every layer. Drag to rearrange; click to inspect.',
       detail:{
         organisational_factors:{verdict:'covered', rat:'Covered: a maintenance-scheduling policy compressed tyre-change bays — a latent organisational factor, evidenced by the roster.'},
         task_environmental_conditions:{verdict:'covered', rat:'Covered: worn attachment locking pins and time pressure on the change-out, evidenced by the inspection log.'},
@@ -188,92 +217,71 @@
     return el;
   }
 
-  function layerCx(){ return LAYERS[0].x; } // box centre x set per-node below
-
-  // box dims
-  const LW=210, LH=84, IW=180, IH=92, AW=200, AH=72, EW=240, EH=64;
+  function edge(a, b, stroke, w, dash, marker, opacity){
+    return n('line', {x1:a.x, y1:a.y, x2:b.x, y2:b.y, stroke, 'stroke-width':w, 'stroke-dasharray':dash||'0', 'marker-end':marker, opacity});
+  }
+  function nodeClass(id){ return 'gnode'+(selected===id?' sel':'')+(drag && drag.id===id?' dragging':''); }
 
   function draw(){
     const d = SCEN[scenario];
     const edges = document.getElementById('edges'); edges.innerHTML='';
     const nodes = document.getElementById('nodes'); nodes.innerHTML='';
 
-    // ----- edges: each layer -> incident -----
+    // ----- edges: each layer -> incident (anchored to box borders) -----
     LAYERS.forEach(L=>{
-      const on = d.covered[L.key];
-      const x1 = L.x + LW/2, y1 = L.y + LH/2;
-      const x2 = INCIDENT.x - IW/2, y2 = INCIDENT.y + IH/2;
-      edges.appendChild(n('path', {
-        d:`M${x1},${y1} C${(x1+x2)/2+40},${y1} ${(x1+x2)/2-40},${y2} ${x2},${y2}`,
-        fill:'none',
-        stroke: on ? '#19A05F' : '#C9CCD2',
-        'stroke-width': on ? 2.4 : 1.6,
-        'stroke-dasharray': on ? '0' : '6 5',
-        'marker-end': on ? 'url(#arrowGreen)' : 'url(#arrow)',
-        opacity: on ? 0.9 : 0.6
-      }));
+      const id='layer:'+L.key, on=d.covered[L.key];
+      const {a,b} = edgeBetween(id, 'incident');
+      edges.appendChild(edge(a, b, on?'#19A05F':'#C9CCD2', on?2.4:1.6, on?null:'6 5', on?'url(#arrowGreen)':'url(#arrow)', on?0.9:0.55));
     });
-
     // ----- edges: corrective action -> targeted layer(s) -----
     d.action.targets.forEach(tk=>{
-      const L = LAYERS.find(x=>x.key===tk);
-      const x1 = ACTION.x, y1 = ACTION.y;
-      const x2 = L.x + LW/2, y2 = L.y + LH/2;
-      edges.appendChild(n('path', {
-        d:`M${x1},${y1} C${(x1+x2)/2},${y1+10} ${(x1+x2)/2},${y2+10} ${x2},${y2}`,
-        fill:'none', stroke:'#E8973A', 'stroke-width':2, 'stroke-dasharray':'2 4', 'marker-end':'url(#arrowAmber)', opacity:0.85
-      }));
+      const {a,b} = edgeBetween('action', 'layer:'+tk);
+      edges.appendChild(edge(a, b, '#E8973A', 2, '2 4', 'url(#arrowAmber)', 0.85));
     });
-
     // ----- edge: evidence -> incident (grounding) -----
-    edges.appendChild(n('path', {
-      d:`M${EVIDENCE.x+EW/2},${EVIDENCE.y} C${EVIDENCE.x+EW/2+80},${EVIDENCE.y} ${INCIDENT.x-40},${INCIDENT.y+IH} ${INCIDENT.x-20},${INCIDENT.y+IH-6}`,
-      fill:'none', stroke:'#8D8D8D', 'stroke-width':1.6, 'marker-end':'url(#arrow)', opacity:0.5
-    }));
+    const eg = edgeBetween('evidence', 'incident');
+    edges.appendChild(edge(eg.a, eg.b, '#8D8D8D', 1.6, null, 'url(#arrow)', 0.5));
 
     // ----- layer nodes -----
     LAYERS.forEach(L=>{
-      const on = d.covered[L.key];
+      const id='layer:'+L.key, p=POS[id], on=d.covered[L.key];
       const fill = on ? 'var(--accent-green-soft)' : 'var(--paper)';
       const stroke = on ? '#BFE6D2' : '#C9CCD2';
-      const g = n('g', {class:'gnode'+(selected==='layer:'+L.key?' sel':''), tabindex:'0'});
-      g.appendChild(n('rect', {class:'nbox', x:L.x, y:L.y, width:LW, height:LH, rx:12, fill, stroke, 'stroke-width':1.5, 'stroke-dasharray': on?'0':'6 5'}));
-      g.appendChild(n('text', {class:'nlabel', x:L.x+16, y:L.y+30, 'font-size':14}, L.label));
-      g.appendChild(n('text', {class:'nsub', x:L.x+16, y:L.y+48, 'font-size':10.5}, 'ICAM layer · '+L.sub));
-      if(on){
-        g.appendChild(n('text', {class:'nflag', x:L.x+16, y:L.y+68, 'font-size':10.5, fill:'#107A47'}, '✓ analysed'));
-      } else {
-        g.appendChild(n('text', {class:'nflag', x:L.x+16, y:L.y+68, 'font-size':10.5, fill:'#E5484D'}, '⚠ not analysed'));
-      }
-      g.addEventListener('click', ()=>selectLayer(L.key));
-      g.addEventListener('keypress', e=>{ if(e.key==='Enter') selectLayer(L.key); });
+      const g = n('g', {class:nodeClass(id), tabindex:'0', 'data-id':id});
+      g.appendChild(n('rect', {class:'nbox', x:p.x, y:p.y, width:p.w, height:p.h, rx:12, fill, stroke, 'stroke-width':1.5, 'stroke-dasharray': on?'0':'6 5'}));
+      g.appendChild(n('text', {class:'nlabel', x:p.x+16, y:p.y+32, 'font-size':14}, L.label));
+      g.appendChild(n('text', {class:'nsub', x:p.x+16, y:p.y+51, 'font-size':10.5}, 'ICAM layer · '+L.sub));
+      g.appendChild(n('text', {class:'nflag', x:p.x+16, y:p.y+73, 'font-size':10.5, fill:on?'#107A47':'#E5484D'}, on?'✓ analysed':'⚠ not analysed'));
       nodes.appendChild(g);
     });
 
     // ----- incident node -----
-    const gi = n('g', {class:'gnode'+(selected==='incident'?' sel':''), tabindex:'0'});
-    gi.appendChild(n('rect', {class:'nbox', x:INCIDENT.x-IW/2, y:INCIDENT.y, width:IW, height:IH, rx:14, fill:'var(--marker-soft)', stroke:'#F3BCBE', 'stroke-width':1.5}));
-    gi.appendChild(n('text', {class:'nsub', x:INCIDENT.x-IW/2+16, y:INCIDENT.y+26, 'font-size':10.5, fill:'#E5484D'}, 'INCIDENT'));
-    gi.appendChild(n('text', {class:'nlabel', x:INCIDENT.x-IW/2+16, y:INCIDENT.y+48, 'font-size':13}, d.incidentId));
-    gi.appendChild(n('text', {class:'nsub', x:INCIDENT.x-IW/2+16, y:INCIDENT.y+68, 'font-size':10.5}, d.incidentLabel));
-    gi.addEventListener('click', ()=>selectIncident());
-    nodes.appendChild(gi);
+    (function(){ const p=POS.incident;
+      const g = n('g', {class:nodeClass('incident'), tabindex:'0', 'data-id':'incident'});
+      g.appendChild(n('rect', {class:'nbox', x:p.x, y:p.y, width:p.w, height:p.h, rx:14, fill:'var(--marker-soft)', stroke:'#F3BCBE', 'stroke-width':1.5}));
+      g.appendChild(n('text', {class:'nsub', x:p.x+18, y:p.y+28, 'font-size':10.5, fill:'#E5484D'}, 'INCIDENT'));
+      g.appendChild(n('text', {class:'nlabel', x:p.x+18, y:p.y+52, 'font-size':13}, d.incidentId));
+      g.appendChild(n('text', {class:'nsub', x:p.x+18, y:p.y+73, 'font-size':10.5}, d.incidentLabel));
+      nodes.appendChild(g);
+    })();
 
     // ----- corrective action node -----
-    const ga = n('g', {class:'gnode'+(selected==='action'?' sel':''), tabindex:'0'});
-    ga.appendChild(n('rect', {class:'nbox', x:ACTION.x-AW/2, y:ACTION.y-AH/2, width:AW, height:AH, rx:12, fill:'var(--accent-yellow-soft)', stroke:'#F3D6A5', 'stroke-width':1.5}));
-    ga.appendChild(n('text', {class:'nsub', x:ACTION.x-AW/2+16, y:ACTION.y-AH/2+24, 'font-size':10.5, fill:'#B56A10'}, 'CORRECTIVE ACTION'));
-    ga.appendChild(n('text', {class:'nlabel', x:ACTION.x-AW/2+16, y:ACTION.y-AH/2+46, 'font-size':13}, d.action.label));
-    ga.addEventListener('click', ()=>selectAction());
-    nodes.appendChild(ga);
+    (function(){ const p=POS.action;
+      const g = n('g', {class:nodeClass('action'), tabindex:'0', 'data-id':'action'});
+      g.appendChild(n('rect', {class:'nbox', x:p.x, y:p.y, width:p.w, height:p.h, rx:12, fill:'var(--accent-yellow-soft)', stroke:'#F3D6A5', 'stroke-width':1.5}));
+      g.appendChild(n('text', {class:'nsub', x:p.x+16, y:p.y+28, 'font-size':10.5, fill:'#B56A10'}, 'CORRECTIVE ACTION'));
+      g.appendChild(n('text', {class:'nlabel', x:p.x+16, y:p.y+52, 'font-size':13}, d.action.label));
+      nodes.appendChild(g);
+    })();
 
     // ----- evidence node -----
-    const ge = n('g', {class:'gnode'+(selected==='evidence'?' sel':''), tabindex:'0'});
-    ge.appendChild(n('rect', {class:'nbox', x:EVIDENCE.x-EW/2, y:EVIDENCE.y-EH/2, width:EW, height:EH, rx:10, fill:'var(--card)', stroke:'var(--ink-line)', 'stroke-width':1.5}));
-    ge.appendChild(n('text', {class:'nsub', x:EVIDENCE.x-EW/2+14, y:EVIDENCE.y-EH/2+22, 'font-size':10.5}, 'EVIDENCE · grounding'));
-    ge.appendChild(n('text', {class:'nlabel', x:EVIDENCE.x-EW/2+14, y:EVIDENCE.y-EH/2+42, 'font-size':12}, d.evidence.label));
-    ge.addEventListener('click', ()=>selectEvidence());
-    nodes.appendChild(ge);
+    (function(){ const p=POS.evidence;
+      const g = n('g', {class:nodeClass('evidence'), tabindex:'0', 'data-id':'evidence'});
+      g.appendChild(n('rect', {class:'nbox', x:p.x, y:p.y, width:p.w, height:p.h, rx:10, fill:'var(--card)', stroke:'var(--ink-line)', 'stroke-width':1.5}));
+      g.appendChild(n('text', {class:'nsub', x:p.x+14, y:p.y+26, 'font-size':10.5}, 'EVIDENCE · grounding'));
+      g.appendChild(n('text', {class:'nlabel', x:p.x+14, y:p.y+47, 'font-size':12}, d.evidence.label));
+      nodes.appendChild(g);
+    })();
   }
 
   // ---------- evidence-pane detail ----------
@@ -344,6 +352,57 @@
     draw();
     selectIncident();
   }
+
+  // ---------- drag + click ----------
+  // Pointer handlers live on the <svg> (not individual nodes) so they survive
+  // the full redraw that happens on every drag move. A small move threshold
+  // distinguishes a drag from a click (which selects + inspects).
+  function selectById(id){
+    if(id.indexOf('layer:')===0) selectLayer(id.slice(6));
+    else if(id==='incident') selectIncident();
+    else if(id==='action') selectAction();
+    else if(id==='evidence') selectEvidence();
+  }
+
+  const svg = document.getElementById('svg');
+  let drag = null;
+
+  function svgPoint(e){
+    const pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY;
+    const loc = pt.matrixTransform(svg.getScreenCTM().inverse());
+    return {x:loc.x, y:loc.y};
+  }
+  const clampX = (x,w)=>Math.max(6, Math.min(x, VW-w-6));
+  const clampY = (y,h)=>Math.max(6, Math.min(y, VH-h-6));
+
+  svg.addEventListener('pointerdown', e=>{
+    const g = e.target.closest('.gnode'); if(!g) return;
+    const id = g.getAttribute('data-id'); const p = svgPoint(e);
+    drag = {id, sx:p.x, sy:p.y, ox:POS[id].x, oy:POS[id].y, moved:false};
+    try{ svg.setPointerCapture(e.pointerId); }catch(_){}
+    draw();
+  });
+  svg.addEventListener('pointermove', e=>{
+    if(!drag) return;
+    const p = svgPoint(e); const dx = p.x-drag.sx, dy = p.y-drag.sy;
+    if(!drag.moved && (Math.abs(dx)>3 || Math.abs(dy)>3)) drag.moved = true;
+    if(!drag.moved) return;
+    POS[drag.id].x = clampX(drag.ox+dx, POS[drag.id].w);
+    POS[drag.id].y = clampY(drag.oy+dy, POS[drag.id].h);
+    draw();
+  });
+  function endDrag(e){
+    if(!drag) return;
+    const {id, moved} = drag;
+    try{ svg.releasePointerCapture(e.pointerId); }catch(_){}
+    drag = null;
+    draw();
+    if(!moved) selectById(id);
+  }
+  svg.addEventListener('pointerup', endDrag);
+  svg.addEventListener('pointercancel', endDrag);
+
+  function resetLayout(){ POS = clone(DEFAULT_POS); draw(); }
 
   setScenario('deficient');
 </script>
